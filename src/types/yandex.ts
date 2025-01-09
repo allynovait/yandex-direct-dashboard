@@ -5,6 +5,8 @@ export interface YandexAccount {
 }
 
 export interface YandexStats {
+  accountId: string;
+  accountName: string;
   conversions: number;
   spend: number;
   clicks: number;
@@ -15,4 +17,9 @@ export interface YandexStats {
 
 export interface YandexSettings {
   conversionIds: string[];
+}
+
+export type DateRange = {
+  from: Date;
+  to: Date;
 }

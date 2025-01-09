@@ -1,22 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, Coins, MousePointerClick, Target, Wallet2 } from "lucide-react";
-import { StatCard } from "@/components/StatCard";
+import { Calendar } from "lucide-react";
+import { DateRange } from "@/types/yandex";
 import { YandexStats } from "@/types/yandex";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DateRangePicker } from "@/components/DateRangePicker";
+import { useState } from "react";
 
-const mockStats: YandexStats = {
-  conversions: 150,
-  spend: 50000,
-  clicks: 1000,
-  impressions: 10000,
-  balance: 25000,
-  ctr: 10,
-};
+const mockStats: YandexStats[] = [
+  {
+    accountId: "1",
+    accountName: "Основной аккаунт",
+    conversions: 150,
+    spend: 50000,
+    clicks: 1000,
+    impressions: 10000,
+    balance: 25000,
+    ctr: 10,
+  },
+  {
+    accountId: "2",
+    accountName: "Тестовый аккаунт",
+    conversions: 75,
+    spend: 25000,
+    clicks: 500,
+    impressions: 5000,
+    balance: 12500,
+    ctr: 8,
+  },
+];
 
 const Index = () => {
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date(),
+  });
+
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["yandex-stats"],
+    queryKey: ["yandex-stats", dateRange],
     queryFn: async () => {
-      // В будущем здесь будет реальный API-запрос
+      // В будущем здесь будет реальный API-запрос с учетом dateRange
       return mockStats;
     },
   });
@@ -37,41 +66,43 @@ const Index = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8 text-yandex-blue">
-        Статистика Яндекс.Директ
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-yandex-blue">
+          Статистика Яндекс.Директ
+        </h1>
+        <DateRangePicker
+          date={dateRange}
+          onDateChange={setDateRange}
+        />
+      </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="Конверсии"
-          value={formatNumber(stats.conversions)}
-          icon={<Target className="h-4 w-4 text-yandex-red" />}
-        />
-        <StatCard
-          title="Расход"
-          value={formatCurrency(stats.spend)}
-          icon={<Coins className="h-4 w-4 text-yellow-600" />}
-        />
-        <StatCard
-          title="Клики"
-          value={formatNumber(stats.clicks)}
-          icon={<MousePointerClick className="h-4 w-4 text-green-600" />}
-        />
-        <StatCard
-          title="Показы"
-          value={formatNumber(stats.impressions)}
-          icon={<BarChart3 className="h-4 w-4 text-blue-600" />}
-        />
-        <StatCard
-          title="Баланс"
-          value={formatCurrency(stats.balance)}
-          icon={<Wallet2 className="h-4 w-4 text-purple-600" />}
-        />
-        <StatCard
-          title="CTR"
-          value={`${stats.ctr}%`}
-          icon={<Target className="h-4 w-4 text-orange-600" />}
-        />
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Аккаунт</TableHead>
+              <TableHead>Конверсии</TableHead>
+              <TableHead>Расход</TableHead>
+              <TableHead>Клики</TableHead>
+              <TableHead>Показы</TableHead>
+              <TableHead>Баланс</TableHead>
+              <TableHead>CTR</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {stats.map((account) => (
+              <TableRow key={account.accountId}>
+                <TableCell className="font-medium">{account.accountName}</TableCell>
+                <TableCell>{formatNumber(account.conversions)}</TableCell>
+                <TableCell>{formatCurrency(account.spend)}</TableCell>
+                <TableCell>{formatNumber(account.clicks)}</TableCell>
+                <TableCell>{formatNumber(account.impressions)}</TableCell>
+                <TableCell>{formatCurrency(account.balance)}</TableCell>
+                <TableCell>{account.ctr}%</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
