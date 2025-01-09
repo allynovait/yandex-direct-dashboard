@@ -22,7 +22,7 @@ export const YandexAuthProvider = ({ children }: { children: React.ReactNode }) 
   const [user, setUser] = useState<YandexUserInfo | null>(null);
 
   const login = () => {
-    const clientId = "your-client-id"; // You'll need to register your app in Yandex OAuth
+    const clientId = "c5110e2599f640d0bd83a4a3d0e2dbaf";
     const redirectUri = window.location.origin + "/auth/callback";
     const scope = "direct";
     
