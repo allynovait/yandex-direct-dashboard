@@ -11,32 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DateRangePicker } from "@/components/DateRangePicker";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
-
-const mockStats: YandexStats[] = [
-  {
-    accountId: "1",
-    accountName: "Основной аккаунт",
-    conversions: 150,
-    spend: 50000,
-    clicks: 1000,
-    impressions: 10000,
-    balance: 25000,
-    ctr: 10,
-  },
-  {
-    accountId: "2",
-    accountName: "Тестовый аккаунт",
-    conversions: 75,
-    spend: 25000,
-    clicks: 500,
-    impressions: 5000,
-    balance: 12500,
-    ctr: 8,
-  },
-];
+import { useYandexAuth } from "@/components/YandexAuthProvider";
+import { YandexDirectAPI } from "@/services/yandexApi";
 
 const Index = () => {
+  const { isAuthenticated, login } = useYandexAuth();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
@@ -45,15 +26,32 @@ const Index = () => {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["yandex-stats", dateRange],
     queryFn: async () => {
-      // В будущем здесь будет реальный API-запрос с учетом dateRange
-      return mockStats;
+      if (!isAuthenticated) return [];
+      
+      const token = localStorage.getItem("yandex_token");
+      if (!token) return [];
+
+      const api = new YandexDirectAPI(token);
+      return api.getStats(dateRange);
     },
+    enabled: isAuthenticated,
   });
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Войдите в Яндекс</h1>
+        <Button onClick={login} className="bg-[#ff0000] hover:bg-[#cc0000]">
+          Войти через Яндекс
+        </Button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-yandex-blue"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#ff0000]"></div>
       </div>
     );
   }
@@ -67,7 +65,7 @@ const Index = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-yandex-blue">
+        <h1 className="text-3xl font-bold text-[#ff0000]">
           Статистика Яндекс.Директ
         </h1>
         <DateRangePicker
@@ -90,7 +88,7 @@ const Index = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {stats.map((account) => (
+            {stats.map((account: YandexStats) => (
               <TableRow key={account.accountId}>
                 <TableCell className="font-medium">{account.accountName}</TableCell>
                 <TableCell>{formatNumber(account.conversions)}</TableCell>
