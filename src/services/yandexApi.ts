@@ -19,7 +19,10 @@ export class YandexDirectAPI {
         "Accept-Language": "ru",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        method: params.method || "get",
+        params: params.params || params
+      }),
     });
 
     console.log(`Response status: ${response.status}`);
@@ -43,26 +46,41 @@ export class YandexDirectAPI {
 
   async getStats(dateRange: DateRange) {
     return this.makeRequest("reports", {
+      method: "get",
       params: {
         SelectionCriteria: {
           DateFrom: dateRange.from.toISOString().split("T")[0],
           DateTo: dateRange.to.toISOString().split("T")[0],
         },
         FieldNames: [
-          "CampaignId",
+          "AccountName",
+          "AccountId",
           "Impressions",
           "Clicks",
           "Ctr",
           "Cost",
           "Conversions",
+          "AccountBalance"
         ],
         ReportName: "Статистика по аккаунтам",
         ReportType: "ACCOUNT_PERFORMANCE_REPORT",
         DateRangeType: "CUSTOM_DATE",
-        Format: "TSV",
+        Format: "JSON",
         IncludeVAT: "YES",
-        IncludeDiscount: "YES",
-      },
+        IncludeDiscount: "YES"
+      }
+    }).then(response => {
+      // Transform API response to match our YandexStats type
+      return response.data.map((account: any) => ({
+        accountId: account.AccountId,
+        accountName: account.AccountName,
+        conversions: account.Conversions || 0,
+        spend: account.Cost / 1000000, // Convert from microseconds to rubles
+        clicks: account.Clicks,
+        impressions: account.Impressions,
+        balance: account.AccountBalance / 1000000, // Convert from microseconds to rubles
+        ctr: parseFloat(account.Ctr)
+      }));
     });
   }
 }
