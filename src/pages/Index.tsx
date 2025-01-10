@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Calendar } from "lucide-react";
 import { DateRange } from "@/types/yandex";
 import { YandexStats } from "@/types/yandex";
 import {
@@ -14,8 +13,9 @@ import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useYandexAuth } from "@/components/YandexAuthProvider";
-import { YandexDirectAPI } from "@/services/yandexApi";
+import { getAllAccountsStats } from "@/services/yandexApi";
 import { useToast } from "@/components/ui/use-toast";
+import { TokenManager } from "@/components/TokenManager";
 
 const Index = () => {
   const { isAuthenticated, login } = useYandexAuth();
@@ -29,23 +29,10 @@ const Index = () => {
     queryKey: ["yandex-stats", dateRange],
     queryFn: async () => {
       console.log("Fetching stats...");
-      if (!isAuthenticated) {
-        console.log("Not authenticated");
-        return [];
-      }
-      
-      const token = localStorage.getItem("yandex_token");
-      if (!token) {
-        console.log("No token found");
-        return [];
-      }
-
-      console.log("Token found, creating API instance");
-      const api = new YandexDirectAPI(token);
       try {
-        const result = await api.getStats(dateRange);
-        console.log("Stats received:", result);
-        return result;
+        const results = await getAllAccountsStats(dateRange);
+        console.log("Stats received:", results);
+        return results;
       } catch (error) {
         console.error("Error fetching stats:", error);
         toast({
@@ -56,7 +43,6 @@ const Index = () => {
         throw error;
       }
     },
-    enabled: isAuthenticated,
   });
 
   console.log("Render state:", { isAuthenticated, isLoading, error, stats });
@@ -95,15 +81,6 @@ const Index = () => {
     );
   }
 
-  if (!stats || stats.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Нет данных</h1>
-        <p className="text-gray-600">Статистика пока недоступна</p>
-      </div>
-    );
-  }
-
   const formatNumber = (num: number) => new Intl.NumberFormat("ru-RU").format(num);
   const formatCurrency = (num: number) => 
     new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB" }).format(num);
@@ -119,6 +96,8 @@ const Index = () => {
           onDateChange={setDateRange}
         />
       </div>
+
+      <TokenManager />
       
       <div className="rounded-lg border bg-card">
         <Table>
@@ -134,17 +113,25 @@ const Index = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {stats.map((account: YandexStats) => (
-              <TableRow key={account.accountId}>
-                <TableCell className="font-medium">{account.accountName}</TableCell>
-                <TableCell>{formatNumber(account.conversions)}</TableCell>
-                <TableCell>{formatCurrency(account.spend)}</TableCell>
-                <TableCell>{formatNumber(account.clicks)}</TableCell>
-                <TableCell>{formatNumber(account.impressions)}</TableCell>
-                <TableCell>{formatCurrency(account.balance)}</TableCell>
-                <TableCell>{account.ctr}%</TableCell>
+            {stats && stats.length > 0 ? (
+              stats.map((account: YandexStats) => (
+                <TableRow key={account.accountId}>
+                  <TableCell className="font-medium">{account.accountName}</TableCell>
+                  <TableCell>{formatNumber(account.conversions)}</TableCell>
+                  <TableCell>{formatCurrency(account.spend)}</TableCell>
+                  <TableCell>{formatNumber(account.clicks)}</TableCell>
+                  <TableCell>{formatNumber(account.impressions)}</TableCell>
+                  <TableCell>{formatCurrency(account.balance)}</TableCell>
+                  <TableCell>{account.ctr}%</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-4">
+                  Добавьте токены аккаунтов Яндекс.Директ для отображения статистики
+                </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
