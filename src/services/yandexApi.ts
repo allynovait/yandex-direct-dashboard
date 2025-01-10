@@ -2,7 +2,6 @@ import { YandexStats, DateRange } from "@/types/yandex";
 
 export class YandexDirectAPI {
   private token: string;
-  private proxyUrl = "https://cors-proxy.htmldriven.com/?url=";
 
   constructor(token: string) {
     this.token = token;
@@ -10,10 +9,9 @@ export class YandexDirectAPI {
 
   async getStats(dateRange: DateRange): Promise<YandexStats> {
     try {
-      console.log("Making request to Yandex.Direct API with token:", this.token.slice(-8));
+      console.log("Making direct request to Yandex.Direct API with token:", this.token.slice(-8));
       
-      const apiUrl = encodeURIComponent("https://api.direct.yandex.com/json/v5/reports");
-      const response = await fetch(`${this.proxyUrl}${apiUrl}`, {
+      const response = await fetch("https://api.direct.yandex.com/json/v5/reports", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${this.token}`,
@@ -56,8 +54,7 @@ export class YandexDirectAPI {
       console.log("Raw API response:", data);
 
       // Получаем баланс отдельным запросом
-      const balanceApiUrl = encodeURIComponent("https://api.direct.yandex.com/json/v5/accounts");
-      const balanceResponse = await fetch(`${this.proxyUrl}${balanceApiUrl}`, {
+      const balanceResponse = await fetch("https://api.direct.yandex.com/json/v5/accounts", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${this.token}`,
