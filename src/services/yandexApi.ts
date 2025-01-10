@@ -13,6 +13,8 @@ export class YandexDirectAPI {
       
       const response = await fetch("https://api.direct.yandex.com/json/v5/reports", {
         method: "POST",
+        mode: "cors",
+        credentials: "include",
         headers: {
           "Authorization": `Bearer ${this.token}`,
           "Accept-Language": "ru",
@@ -21,7 +23,8 @@ export class YandexDirectAPI {
           "returnMoneyInMicros": "false",
           "skipReportHeader": "true",
           "skipColumnHeader": "true",
-          "skipReportSummary": "true"
+          "skipReportSummary": "true",
+          "Origin": "https://preview--yandex-direct-dashboard.lovable.app"
         },
         body: JSON.stringify({
           params: {
@@ -56,9 +59,12 @@ export class YandexDirectAPI {
       // Получаем баланс отдельным запросом
       const balanceResponse = await fetch("https://api.direct.yandex.com/json/v5/accounts", {
         method: "GET",
+        mode: "cors",
+        credentials: "include",
         headers: {
           "Authorization": `Bearer ${this.token}`,
-          "Accept-Language": "ru"
+          "Accept-Language": "ru",
+          "Origin": "https://preview--yandex-direct-dashboard.lovable.app"
         }
       });
 
