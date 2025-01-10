@@ -2,7 +2,7 @@ import { YandexStats, DateRange } from "@/types/yandex";
 
 export class YandexDirectAPI {
   private token: string;
-  private proxyUrl = "https://jsonp.afeld.me/?url=";
+  private proxyUrl = "https://cors-proxy.htmldriven.com/?url=";
 
   constructor(token: string) {
     this.token = token;
