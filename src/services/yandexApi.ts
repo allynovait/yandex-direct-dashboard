@@ -2,7 +2,7 @@ import { YandexStats, DateRange } from "@/types/yandex";
 
 export class YandexDirectAPI {
   private token: string;
-  private proxyUrl = "https://cors-anywhere.herokuapp.com/";
+  private proxyUrl = "https://jsonp.afeld.me/?url=";
 
   constructor(token: string) {
     this.token = token;
@@ -12,7 +12,7 @@ export class YandexDirectAPI {
     try {
       console.log("Making request to Yandex.Direct API with token:", this.token.slice(-8));
       
-      const apiUrl = "https://api.direct.yandex.com/json/v5/reports";
+      const apiUrl = encodeURIComponent("https://api.direct.yandex.com/json/v5/reports");
       const response = await fetch(`${this.proxyUrl}${apiUrl}`, {
         method: "POST",
         headers: {
@@ -23,8 +23,7 @@ export class YandexDirectAPI {
           "returnMoneyInMicros": "false",
           "skipReportHeader": "true",
           "skipColumnHeader": "true",
-          "skipReportSummary": "true",
-          "Origin": "https://preview--yandex-direct-dashboard.lovable.app"
+          "skipReportSummary": "true"
         },
         body: JSON.stringify({
           params: {
@@ -57,12 +56,12 @@ export class YandexDirectAPI {
       console.log("Raw API response:", data);
 
       // Получаем баланс отдельным запросом
-      const balanceResponse = await fetch(`${this.proxyUrl}https://api.direct.yandex.com/json/v5/accounts`, {
+      const balanceApiUrl = encodeURIComponent("https://api.direct.yandex.com/json/v5/accounts");
+      const balanceResponse = await fetch(`${this.proxyUrl}${balanceApiUrl}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${this.token}`,
-          "Accept-Language": "ru",
-          "Origin": "https://preview--yandex-direct-dashboard.lovable.app"
+          "Accept-Language": "ru"
         }
       });
 
