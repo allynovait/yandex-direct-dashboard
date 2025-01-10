@@ -23,7 +23,7 @@ export const YandexAuthProvider = ({ children }: { children: React.ReactNode }) 
 
   const login = () => {
     const clientId = "c5110e2599f640d0bd83a4a3d0e2dbaf";
-    const redirectUri = window.location.origin + "/auth/callback";
+    const redirectUri = "https://preview--yandex-direct-dashboard.lovable.app/";
     const scope = "direct";
     
     const authUrl = `https://oauth.yandex.ru/authorize?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
