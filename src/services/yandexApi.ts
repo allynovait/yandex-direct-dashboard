@@ -1,5 +1,7 @@
 import { YandexStats, DateRange } from "@/types/yandex";
 
+const API_URL = 'http://localhost:3000/api/yandex';
+
 export class YandexDirectAPI {
   private token: string;
 
@@ -9,62 +11,27 @@ export class YandexDirectAPI {
 
   async getStats(dateRange: DateRange): Promise<YandexStats> {
     try {
-      console.log("Making direct request to Yandex.Direct API with token:", this.token.slice(-8));
+      console.log("Making request to backend with token:", this.token.slice(-8));
       
-      const response = await fetch("https://api.direct.yandex.com/json/v5/reports", {
+      const response = await fetch(`${API_URL}/stats`, {
         method: "POST",
-        mode: "cors",
-        credentials: "include",
         headers: {
-          "Authorization": `Bearer ${this.token}`,
-          "Accept-Language": "ru",
           "Content-Type": "application/json",
-          "processingMode": "auto",
-          "returnMoneyInMicros": "false",
-          "skipReportHeader": "true",
-          "skipColumnHeader": "true",
-          "skipReportSummary": "true",
-          "Origin": "https://preview--yandex-direct-dashboard.lovable.app"
+          "Authorization": `Bearer ${this.token}`
         },
-        body: JSON.stringify({
-          params: {
-            SelectionCriteria: {
-              DateFrom: dateRange.from.toISOString().split("T")[0],
-              DateTo: dateRange.to.toISOString().split("T")[0]
-            },
-            FieldNames: [
-              "Clicks",
-              "Impressions",
-              "Ctr",
-              "Cost",
-              "Conversions"
-            ],
-            ReportName: `Report ${Date.now()}`,
-            ReportType: "ACCOUNT_PERFORMANCE_REPORT",
-            DateRangeType: "CUSTOM_DATE",
-            Format: "JSON",
-            IncludeVAT: "YES"
-          }
-        })
+        body: JSON.stringify({ token: this.token, dateRange })
       });
 
       if (!response.ok) {
-        console.error("API error response:", await response.text());
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log("Raw API response:", data);
-
+      
       // Получаем баланс отдельным запросом
-      const balanceResponse = await fetch("https://api.direct.yandex.com/json/v5/accounts", {
-        method: "GET",
-        mode: "cors",
-        credentials: "include",
+      const balanceResponse = await fetch(`${API_URL}/accounts`, {
         headers: {
-          "Authorization": `Bearer ${this.token}`,
-          "Accept-Language": "ru",
-          "Origin": "https://preview--yandex-direct-dashboard.lovable.app"
+          "Authorization": `Bearer ${this.token}`
         }
       });
 
