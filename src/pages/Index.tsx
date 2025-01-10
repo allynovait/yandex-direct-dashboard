@@ -16,6 +16,7 @@ import { useYandexAuth } from "@/components/YandexAuthProvider";
 import { getAllAccountsStats } from "@/services/yandexApi";
 import { useToast } from "@/components/ui/use-toast";
 import { TokenManager } from "@/components/TokenManager";
+import { ReloadIcon } from "@radix-ui/react-icons";
 
 const Index = () => {
   const { isAuthenticated, login } = useYandexAuth();
@@ -25,7 +26,7 @@ const Index = () => {
     to: new Date(),
   });
 
-  const { data: stats, isLoading, error } = useQuery({
+  const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ["yandex-stats", dateRange],
     queryFn: async () => {
       console.log("Fetching stats...");
@@ -43,6 +44,8 @@ const Index = () => {
         throw error;
       }
     },
+    refetchInterval: 5 * 60 * 1000, // Обновление каждые 5 минут вместо автоматического
+    refetchOnWindowFocus: false, // Отключаем автообновление при фокусе окна
   });
 
   console.log("Render state:", { isAuthenticated, isLoading, error, stats });
@@ -91,10 +94,20 @@ const Index = () => {
         <h1 className="text-3xl font-bold text-[#ff0000]">
           Статистика Яндекс.Директ
         </h1>
-        <DateRangePicker
-          date={dateRange}
-          onDateChange={setDateRange}
-        />
+        <div className="flex items-center gap-4">
+          <DateRangePicker
+            date={dateRange}
+            onDateChange={setDateRange}
+          />
+          <Button 
+            onClick={() => refetch()} 
+            variant="outline"
+            className="gap-2"
+          >
+            <ReloadIcon className="h-4 w-4" />
+            Обновить данные
+          </Button>
+        </div>
       </div>
 
       <TokenManager />
