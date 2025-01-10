@@ -15,27 +15,51 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useYandexAuth } from "@/components/YandexAuthProvider";
 import { YandexDirectAPI } from "@/services/yandexApi";
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const { isAuthenticated, login } = useYandexAuth();
+  const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
   });
 
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ["yandex-stats", dateRange],
     queryFn: async () => {
-      if (!isAuthenticated) return [];
+      console.log("Fetching stats...");
+      if (!isAuthenticated) {
+        console.log("Not authenticated");
+        return [];
+      }
       
       const token = localStorage.getItem("yandex_token");
-      if (!token) return [];
+      if (!token) {
+        console.log("No token found");
+        return [];
+      }
 
+      console.log("Token found, creating API instance");
       const api = new YandexDirectAPI(token);
-      return api.getStats(dateRange);
+      try {
+        const result = await api.getStats(dateRange);
+        console.log("Stats received:", result);
+        return result;
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        toast({
+          title: "Ошибка загрузки данных",
+          description: "Не удалось загрузить статистику. Попробуйте позже.",
+          variant: "destructive",
+        });
+        throw error;
+      }
     },
     enabled: isAuthenticated,
   });
+
+  console.log("Render state:", { isAuthenticated, isLoading, error, stats });
 
   if (!isAuthenticated) {
     return (
@@ -56,7 +80,29 @@ const Index = () => {
     );
   }
 
-  if (!stats) return null;
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Произошла ошибка</h1>
+        <p className="text-gray-600">Не удалось загрузить данные. Попробуйте позже.</p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 bg-[#ff0000] hover:bg-[#cc0000]"
+        >
+          Обновить страницу
+        </Button>
+      </div>
+    );
+  }
+
+  if (!stats || stats.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Нет данных</h1>
+        <p className="text-gray-600">Статистика пока недоступна</p>
+      </div>
+    );
+  }
 
   const formatNumber = (num: number) => new Intl.NumberFormat("ru-RU").format(num);
   const formatCurrency = (num: number) => 

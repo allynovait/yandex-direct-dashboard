@@ -10,6 +10,8 @@ export class YandexDirectAPI {
   }
 
   private async makeRequest(method: string, params: any) {
+    console.log(`Making request to ${method}`, params);
+    
     const response = await fetch(`${YANDEX_API_URL}${method}`, {
       method: "POST",
       headers: {
@@ -20,11 +22,17 @@ export class YandexDirectAPI {
       body: JSON.stringify(params),
     });
 
+    console.log(`Response status: ${response.status}`);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API error: ${errorText}`);
       throw new Error(`Yandex Direct API error: ${response.statusText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("API response:", data);
+    return data;
   }
 
   async getAccounts() {
