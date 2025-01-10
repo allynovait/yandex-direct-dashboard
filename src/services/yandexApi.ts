@@ -28,42 +28,51 @@ export class YandexDirectAPI {
           ReportName: "Account Performance Report",
           ReportType: "ACCOUNT_PERFORMANCE_REPORT",
           DateRangeType: "CUSTOM_DATE",
-          Format: "JSON",
+          Format: "TSV",
           IncludeVAT: "YES",
           IncludeDiscount: "YES"
         }
       };
 
-      const response = await fetch("https://api.direct.yandex.ru/live/v4/json/", {
+      const response = await fetch("https://api.direct.yandex.com/json/v5/reports", {
         method: "POST",
         headers: {
-          "Authorization": `OAuth ${this.token}`,
+          "Authorization": `Bearer ${this.token}`,
           "Accept-Language": "ru",
-          "Content-Type": "application/json",
+          "Content-Type": "application/json; charset=utf-8",
+          "processingMode": "auto",
+          "returnMoneyInMicros": "false",
+          "skipReportHeader": "true",
+          "skipColumnHeader": "true",
+          "skipReportSummary": "true"
         },
         body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("API Error:", errorText);
-        throw new Error(`Failed to fetch statistics: ${response.statusText}`);
+        console.error(`API error: ${errorText}`);
+        throw new Error(`Yandex Direct API error: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.text();
       console.log("Raw API response:", data);
 
-      // Преобразуем данные в нужный формат
-      return data.data.map((account: any) => ({
-        accountId: account.AccountID || "",
-        accountName: account.AccountName || "Неизвестный аккаунт",
-        clicks: parseInt(account.Clicks) || 0,
-        impressions: parseInt(account.Impressions) || 0,
-        ctr: parseFloat(account.Ctr) || 0,
-        spend: parseFloat(account.Cost) || 0,
-        conversions: parseInt(account.Conversions) || 0,
-        balance: 0 // Баланс получаем отдельным запросом, если потребуется
-      }));
+      // Разбираем TSV ответ
+      const rows = data.trim().split("\n");
+      return rows.map(row => {
+        const [impressions, clicks, ctr, cost, conversions] = row.split("\t");
+        return {
+          accountId: "direct",
+          accountName: "Яндекс.Директ",
+          clicks: parseInt(clicks) || 0,
+          impressions: parseInt(impressions) || 0,
+          ctr: parseFloat(ctr) || 0,
+          spend: parseFloat(cost) || 0,
+          conversions: parseInt(conversions) || 0,
+          balance: 0 // Баланс получаем отдельным запросом, если потребуется
+        };
+      });
     } catch (error) {
       console.error("Error fetching stats:", error);
       throw error;
