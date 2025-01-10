@@ -39,6 +39,19 @@ export const YandexAuthProvider = ({ children }: { children: React.ReactNode }) 
   };
 
   useEffect(() => {
+    // Проверяем наличие токена в URL после редиректа
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get("access_token");
+      if (token) {
+        localStorage.setItem("yandex_token", token);
+        // Очищаем URL от токена
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
+    // Проверяем токен в localStorage
     const token = localStorage.getItem("yandex_token");
     if (token) {
       // Verify token and get user info
