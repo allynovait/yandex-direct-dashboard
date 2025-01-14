@@ -11,18 +11,27 @@ import {
 } from "@/components/ui/table";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { TokenManager } from "@/components/TokenManager";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { getAllAccountsStats } from "@/services/yandexApi";
+import { LoginScreen } from "@/components/LoginScreen";
 
 const Index = () => {
   const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
   });
+
+  useEffect(() => {
+    const auth = localStorage.getItem("isAuthenticated");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ["yandex-stats", dateRange],
@@ -45,6 +54,10 @@ const Index = () => {
     refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+
+  if (!isAuthenticated) {
+    return <LoginScreen onSuccess={() => setIsAuthenticated(true)} />;
+  }
 
   if (isLoading) {
     return (
