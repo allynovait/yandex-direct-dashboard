@@ -1,6 +1,6 @@
 import { YandexStats, DateRange } from "@/types/yandex";
 
-const API_URL = 'http://localhost:8080/api/yandex';
+const API_URL = 'http://172.16.0.2:8080/api/yandex';
 
 export class YandexDirectAPI {
   private token: string;
