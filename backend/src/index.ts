@@ -5,11 +5,7 @@ import yandexRoutes from './routes/yandexRoutes';
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: 'https://preview--yandex-direct-dashboard.lovable.app',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(cors());  // Разрешаем все origins для локальной разработки
 
 app.use(express.json());
 app.use('/api/yandex', yandexRoutes);

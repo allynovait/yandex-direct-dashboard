@@ -9,53 +9,74 @@ export class YandexService {
   }
 
   async getStats(dateRange: DateRange) {
-    const response = await axios.post(
-      'https://api.direct.yandex.com/json/v5/reports',
-      {
-        params: {
-          SelectionCriteria: {
-            DateFrom: dateRange.from,
-            DateTo: dateRange.to
-          },
-          FieldNames: [
-            "Clicks",
-            "Impressions",
-            "Ctr",
-            "Cost",
-            "Conversions"
-          ],
-          ReportName: `Report ${Date.now()}`,
-          ReportType: "ACCOUNT_PERFORMANCE_REPORT",
-          DateRangeType: "CUSTOM_DATE",
-          Format: "JSON",
-          IncludeVAT: "YES"
-        }
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Accept-Language': 'ru',
-          'Content-Type': 'application/json',
-          'processingMode': 'auto',
-          'returnMoneyInMicros': 'false',
-          'skipReportHeader': 'true',
-          'skipColumnHeader': 'true',
-          'skipReportSummary': 'true'
-        }
-      }
-    );
+    try {
+      console.log('Making request to Yandex.Direct API with params:', {
+        dateFrom: dateRange.from,
+        dateTo: dateRange.to,
+        token: this.token.slice(-8)
+      });
 
-    return response.data;
+      const response = await axios.post(
+        'https://api.direct.yandex.com/json/v5/reports',
+        {
+          params: {
+            SelectionCriteria: {
+              DateFrom: dateRange.from,
+              DateTo: dateRange.to
+            },
+            FieldNames: [
+              "Clicks",
+              "Impressions",
+              "Ctr",
+              "Cost",
+              "Conversions"
+            ],
+            ReportName: `Report ${Date.now()}`,
+            ReportType: "ACCOUNT_PERFORMANCE_REPORT",
+            DateRangeType: "CUSTOM_DATE",
+            Format: "JSON",
+            IncludeVAT: "YES"
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Accept-Language': 'ru',
+            'Content-Type': 'application/json',
+            'processingMode': 'auto',
+            'returnMoneyInMicros': 'false',
+            'skipReportHeader': 'true',
+            'skipColumnHeader': 'true',
+            'skipReportSummary': 'true'
+          }
+        }
+      );
+
+      console.log('Yandex.Direct API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in YandexService.getStats:', error.response?.data || error.message);
+      throw error;
+    }
   }
 
   async getAccounts() {
-    const response = await axios.get('https://api.direct.yandex.com/json/v5/accounts', {
-      headers: {
-        'Authorization': `Bearer ${this.token}`,
-        'Accept-Language': 'ru'
-      }
-    });
+    try {
+      console.log('Making request to Yandex.Direct API for accounts');
+      
+      const response = await axios.get('https://api.direct.yandex.com/json/v5/accounts', {
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Accept-Language': 'ru',
+          'Content-Type': 'application/json'
+        }
+      });
 
-    return response.data;
+      console.log('Yandex.Direct API accounts response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in YandexService.getAccounts:', error.response?.data || error.message);
+      throw error;
+    }
   }
 }
