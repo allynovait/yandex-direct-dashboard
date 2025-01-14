@@ -12,14 +12,12 @@ import {
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useYandexAuth } from "@/components/YandexAuthProvider";
-import { getAllAccountsStats } from "@/services/yandexApi";
 import { useToast } from "@/components/ui/use-toast";
 import { TokenManager } from "@/components/TokenManager";
 import { ReloadIcon } from "@radix-ui/react-icons";
+import { getAllAccountsStats } from "@/services/yandexApi";
 
 const Index = () => {
-  const { isAuthenticated, login } = useYandexAuth();
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
@@ -44,22 +42,9 @@ const Index = () => {
         throw error;
       }
     },
-    refetchInterval: 5 * 60 * 1000, // Обновление каждые 5 минут вместо автоматического
-    refetchOnWindowFocus: false, // Отключаем автообновление при фокусе окна
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
-
-  console.log("Render state:", { isAuthenticated, isLoading, error, stats });
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <h1 className="text-2xl font-bold mb-4">Войдите в Яндекс</h1>
-        <Button onClick={login} className="bg-[#ff0000] hover:bg-[#cc0000]">
-          Войти через Яндекс
-        </Button>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
