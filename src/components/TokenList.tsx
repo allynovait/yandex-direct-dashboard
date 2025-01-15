@@ -29,7 +29,7 @@ export const TokenList = () => {
       setTokenStatus(prev => ({ ...prev, ...newStatus }));
       
       try {
-        const response = await fetch("http://89.223.70.180:3000/api/yandex/accounts", {
+        const response = await fetch("https://89.223.70.180:3000/api/yandex/accounts", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
