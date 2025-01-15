@@ -140,17 +140,15 @@ serve(async (req) => {
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
-              'curve25519-sha256',
-              'curve25519-sha256@libssh.org',
-              'ecdh-sha2-nistp256',
-              'ecdh-sha2-nistp384',
-              'ecdh-sha2-nistp521',
               'diffie-hellman-group-exchange-sha256',
               'diffie-hellman-group14-sha256',
               'diffie-hellman-group15-sha512',
               'diffie-hellman-group16-sha512',
               'diffie-hellman-group17-sha512',
-              'diffie-hellman-group18-sha512'
+              'diffie-hellman-group18-sha512',
+              'ecdh-sha2-nistp256',
+              'ecdh-sha2-nistp384',
+              'ecdh-sha2-nistp521'
             ],
             serverHostKey: [
               'ssh-rsa',
