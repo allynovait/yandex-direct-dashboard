@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { Client } from "https://deno.land/x/ssh2@1.3.0/mod.ts";
+import { Client } from "npm:ssh2@1.11.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,7 +9,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -88,7 +88,7 @@ serve(async (req) => {
     const ssh = new Client();
     
     try {
-      await new Promise((resolve, reject) => {
+      const output = await new Promise((resolve, reject) => {
         ssh.on('ready', () => {
           console.log('SSH connection established')
           ssh.exec(testCommand.command, (err, stream) => {
@@ -127,57 +127,54 @@ serve(async (req) => {
           privateKey: server.ssh_private_key
         })
       })
-      .then(async (output) => {
-        // Обновляем статус команды на успешный
-        const { error: updateError } = await supabaseClient
-          .from('server_commands')
-          .update({
-            status: 'completed',
-            output: output as string,
-            executed_at: new Date().toISOString()
-          })
-          .eq('id', commandRecord.id)
 
-        if (updateError) {
-          console.error('Error updating command status:', updateError)
-          throw updateError
+      // Обновляем статус команды на успешный
+      const { error: updateError } = await supabaseClient
+        .from('server_commands')
+        .update({
+          status: 'completed',
+          output: output as string,
+          executed_at: new Date().toISOString()
+        })
+        .eq('id', commandRecord.id)
+
+      if (updateError) {
+        console.error('Error updating command status:', updateError)
+        throw updateError
+      }
+
+      console.log('Command execution completed successfully')
+      
+      return new Response(
+        JSON.stringify({ success: true, output }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
         }
-
-        console.log('Command execution completed successfully')
-        return output
-      })
-      .catch(async (error) => {
-        // Обновляем статус команды на ошибку
-        const { error: updateError } = await supabaseClient
-          .from('server_commands')
-          .update({
-            status: 'error',
-            output: error.message,
-            executed_at: new Date().toISOString()
-          })
-          .eq('id', commandRecord.id)
-
-        if (updateError) {
-          console.error('Error updating command status:', updateError)
-        }
-        throw error
-      })
-      .finally(() => {
-        ssh.end()
-      })
+      )
 
     } catch (sshError) {
       console.error('SSH execution error:', sshError)
+      
+      // Обновляем статус команды на ошибку
+      const { error: updateError } = await supabaseClient
+        .from('server_commands')
+        .update({
+          status: 'error',
+          output: sshError.message,
+          executed_at: new Date().toISOString()
+        })
+        .eq('id', commandRecord.id)
+
+      if (updateError) {
+        console.error('Error updating command status:', updateError)
+      }
+      
       throw new Error(`Ошибка выполнения SSH команды: ${sshError.message}`)
+    } finally {
+      ssh.end()
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
-    )
   } catch (error) {
     console.error('Error executing command:', {
       message: error.message,
