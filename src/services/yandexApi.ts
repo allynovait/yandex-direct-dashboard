@@ -1,7 +1,7 @@
 import { YandexStats, DateRange } from "@/types/yandex";
 
-// Используем HTTP URL для тестового сервера
-const API_URL = 'http://89.223.70.180:3000/api/yandex';
+// Используем HTTPS URL для тестового сервера
+const API_URL = 'https://89.223.70.180:3000/api/yandex';
 
 export class YandexDirectAPI {
   private token: string;
@@ -13,6 +13,7 @@ export class YandexDirectAPI {
   async getStats(dateRange: DateRange): Promise<YandexStats> {
     try {
       console.log("Making request to backend with token:", this.token.slice(-8));
+      console.log("Date range:", dateRange);
       
       const response = await fetch(`${API_URL}/stats`, {
         method: "POST",
@@ -20,6 +21,7 @@ export class YandexDirectAPI {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${this.token}`
         },
+        credentials: 'include',
         body: JSON.stringify({ token: this.token, dateRange })
       });
 
@@ -35,8 +37,10 @@ export class YandexDirectAPI {
       // Получаем баланс отдельным запросом
       const balanceResponse = await fetch(`${API_URL}/accounts`, {
         headers: {
-          "Authorization": `Bearer ${this.token}`
-        }
+          "Authorization": `Bearer ${this.token}`,
+          "Content-Type": "application/json"
+        },
+        credentials: 'include'
       });
 
       let balance = 0;
