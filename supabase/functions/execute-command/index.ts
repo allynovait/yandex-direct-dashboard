@@ -104,37 +104,34 @@ serve(async (req) => {
         })
 
         ssh.on('handshake', (negotiated) => {
-          console.log('SSH handshake details:', {
-            kex: negotiated.kex,
-            serverHostKey: negotiated.serverHostKey,
-            cipher: negotiated.cipher,
-            mac: negotiated.mac,
-            compression: negotiated.compression,
-          })
+          console.log('SSH handshake details:', negotiated)
         })
 
         // Форматируем приватный ключ
         let privateKey = server.ssh_private_key || '';
         
-        // Убираем лишние пробелы в начале и конце строк
+        // Убираем лишние пробелы и форматируем ключ
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
+          .filter(line => line.length > 0)
           .join('\n');
-        
+
         // Проверяем и добавляем заголовок и футер, если их нет
         if (!privateKey.includes('-----BEGIN')) {
           privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
         }
 
-        console.log('Attempting SSH connection to:', server.host)
         console.log('SSH key format check:', {
           hasHeader: privateKey.includes('-----BEGIN'),
           hasFooter: privateKey.includes('-----END'),
           length: privateKey.length,
           firstLine: privateKey.split('\n')[0],
-          lastLine: privateKey.split('\n').slice(-1)[0]
+          lastLine: privateKey.split('\n').slice(-1)[0],
+          totalLines: privateKey.split('\n').length
         })
+
+        console.log('Attempting SSH connection to:', server.host)
 
         ssh.connect({
           host: server.host,
@@ -143,43 +140,38 @@ serve(async (req) => {
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
-              'diffie-hellman-group1-sha1',
-              'diffie-hellman-group14-sha1',
-              'diffie-hellman-group14-sha256',
-              'diffie-hellman-group16-sha512',
-              'diffie-hellman-group18-sha512',
-              'diffie-hellman-group-exchange-sha1',
-              'diffie-hellman-group-exchange-sha256',
+              'curve25519-sha256',
+              'curve25519-sha256@libssh.org',
               'ecdh-sha2-nistp256',
               'ecdh-sha2-nistp384',
-              'ecdh-sha2-nistp521'
+              'ecdh-sha2-nistp521',
+              'diffie-hellman-group-exchange-sha256',
+              'diffie-hellman-group14-sha256',
+              'diffie-hellman-group15-sha512',
+              'diffie-hellman-group16-sha512',
+              'diffie-hellman-group17-sha512',
+              'diffie-hellman-group18-sha512'
+            ],
+            serverHostKey: [
+              'ssh-rsa',
+              'rsa-sha2-256',
+              'rsa-sha2-512',
+              'ssh-dss',
+              'ecdsa-sha2-nistp256',
+              'ecdsa-sha2-nistp384',
+              'ecdsa-sha2-nistp521'
             ],
             cipher: [
               'aes128-ctr',
               'aes192-ctr',
               'aes256-ctr',
               'aes128-gcm',
-              'aes256-gcm',
-              'aes128-cbc',
-              'aes192-cbc',
-              'aes256-cbc'
-            ],
-            serverHostKey: [
-              'ssh-rsa',
-              'ssh-dss',
-              'ecdsa-sha2-nistp256',
-              'ecdsa-sha2-nistp384',
-              'ecdsa-sha2-nistp521',
-              'rsa-sha2-256',
-              'rsa-sha2-512'
+              'aes256-gcm'
             ],
             hmac: [
-              'hmac-sha1',
-              'hmac-sha1-96',
               'hmac-sha2-256',
               'hmac-sha2-512',
-              'hmac-md5',
-              'hmac-md5-96'
+              'hmac-sha1'
             ]
           },
           hostVerifier: () => true
