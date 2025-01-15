@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -13,6 +14,20 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
+
+  const getErrorMessage = (error: AuthError) => {
+    if (error instanceof AuthApiError) {
+      switch (error.status) {
+        case 400:
+          return "Invalid email or password. Please check your credentials.";
+        case 422:
+          return "Email format is invalid.";
+        default:
+          return error.message;
+      }
+    }
+    return "An unexpected error occurred. Please try again.";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +41,8 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
       if (error) {
         toast({
           variant: "destructive",
-          title: "Ошибка авторизации",
-          description: error.message,
+          title: "Authentication Error",
+          description: getErrorMessage(error),
         });
         return;
       }
@@ -39,8 +54,8 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Ошибка авторизации",
-        description: "Произошла ошибка при попытке входа",
+        title: "Authentication Error",
+        description: "An unexpected error occurred while trying to log in",
       });
     }
   };
@@ -49,9 +64,9 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="mx-auto w-full max-w-sm space-y-6 rounded-lg border bg-card p-6 shadow-lg">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-[#ff0000]">Вход в систему</h1>
+          <h1 className="text-3xl font-bold text-[#ff0000]">Login</h1>
           <p className="text-muted-foreground">
-            Введите ваши учетные данные для входа
+            Please sign in with your Supabase account
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -66,7 +81,7 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Пароль</Label>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
@@ -79,7 +94,7 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
             type="submit"
             className="w-full bg-[#ff0000] hover:bg-[#cc0000]"
           >
-            Войти
+            Sign In
           </Button>
         </form>
       </div>
