@@ -9,7 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      server_commands: {
+        Row: {
+          command: string
+          created_at: string | null
+          executed_at: string | null
+          id: string
+          output: string | null
+          server_id: string | null
+          status: string | null
+        }
+        Insert: {
+          command: string
+          created_at?: string | null
+          executed_at?: string | null
+          id?: string
+          output?: string | null
+          server_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          command?: string
+          created_at?: string | null
+          executed_at?: string | null
+          id?: string
+          output?: string | null
+          server_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "server_commands_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servers: {
+        Row: {
+          created_at: string | null
+          host: string
+          id: string
+          name: string
+          ssh_key: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          host: string
+          id?: string
+          name: string
+          ssh_key?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          host?: string
+          id?: string
+          name?: string
+          ssh_key?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
