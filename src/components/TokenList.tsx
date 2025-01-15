@@ -102,4 +102,4 @@ export const TokenList = () => {
       </div>
     </div>
   );
-});
+};
