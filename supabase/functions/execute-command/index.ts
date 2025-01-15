@@ -16,7 +16,12 @@ serve(async (req) => {
     console.log('Initializing Supabase client...')
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        auth: {
+          persistSession: false
+        }
+      }
     )
     console.log('Supabase client initialized successfully')
 
@@ -47,17 +52,22 @@ serve(async (req) => {
     }
 
     // Get server information with detailed logging
-    console.log('Fetching server details for ID:', serverId)
-    const { data: servers, error: serversError } = await supabaseClient
+    console.log('Preparing server query for ID:', serverId)
+    const query = supabaseClient
       .from('servers')
       .select('*')
       .eq('id', serverId)
+    
+    console.log('Executing query:', query.toSQL())
+    
+    const { data: servers, error: serversError } = await query
 
     console.log('Server lookup result:', {
       success: !!servers,
       error: serversError?.message || null,
       serverId,
-      serversCount: servers?.length || 0
+      serversCount: servers?.length || 0,
+      query: query.toSQL()
     })
 
     if (serversError) {
