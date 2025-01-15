@@ -93,7 +93,23 @@ serve(async (req) => {
         ssh.connect({
           host: server.host,
           username: server.ssh_username,
-          privateKey: server.ssh_private_key
+          privateKey: server.ssh_private_key,
+          algorithms: {
+            kex: [
+              'diffie-hellman-group1-sha1',
+              'diffie-hellman-group14-sha1',
+              'diffie-hellman-group14-sha256',
+              'diffie-hellman-group16-sha512',
+              'diffie-hellman-group18-sha512'
+            ],
+            cipher: [
+              'aes128-ctr',
+              'aes192-ctr',
+              'aes256-ctr',
+              'aes128-gcm',
+              'aes256-gcm'
+            ]
+          }
         })
       })
 
@@ -116,6 +132,8 @@ serve(async (req) => {
       )
 
     } catch (sshError) {
+      console.error('SSH Error:', sshError)
+      
       // Update command status to error
       await supabaseClient
         .from('server_commands')
