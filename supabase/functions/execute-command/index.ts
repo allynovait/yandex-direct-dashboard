@@ -24,7 +24,6 @@ serve(async (req) => {
       }
     )
 
-    // Get request body
     const { serverId, command } = await req.json()
     
     if (!serverId || !command) {
@@ -33,7 +32,6 @@ serve(async (req) => {
 
     console.log('Executing command:', command)
 
-    // Get server details
     const { data: server, error: serverError } = await supabaseClient
       .from('servers')
       .select('*')
@@ -109,11 +107,17 @@ serve(async (req) => {
           console.log('SSH handshake complete. Negotiated algorithms:', negotiated)
         })
 
+        // Format private key by ensuring it has the correct header and footer
+        let privateKey = server.ssh_private_key || '';
+        if (!privateKey.includes('-----BEGIN')) {
+          privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
+        }
+
         console.log('Attempting SSH connection to:', server.host)
         ssh.connect({
           host: server.host,
           username: server.ssh_username,
-          privateKey: server.ssh_private_key,
+          privateKey,
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
