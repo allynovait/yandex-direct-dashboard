@@ -23,22 +23,24 @@ export class YandexService {
       const response = await axios.post(
         'https://api.direct.yandex.com/json/v5/reports',
         {
-          SelectionCriteria: {
-            DateFrom: dateFrom,
-            DateTo: dateTo
-          },
-          FieldNames: [
-            "Clicks",
-            "Impressions",
-            "Ctr",
-            "Cost",
-            "Conversions"
-          ],
-          ReportName: `Report ${Date.now()}`,
-          ReportType: "ACCOUNT_PERFORMANCE_REPORT",
-          DateRangeType: "CUSTOM_DATE",
-          Format: "TSV",
-          IncludeVAT: "YES"
+          params: {
+            SelectionCriteria: {
+              DateFrom: dateFrom,
+              DateTo: dateTo
+            },
+            FieldNames: [
+              "Clicks",
+              "Impressions",
+              "Ctr",
+              "Cost",
+              "Conversions"
+            ],
+            ReportName: `Report ${Date.now()}`,
+            ReportType: "ACCOUNT_PERFORMANCE_REPORT",
+            DateRangeType: "CUSTOM_DATE",
+            Format: "TSV",
+            IncludeVAT: "YES"
+          }
         },
         {
           headers: {
