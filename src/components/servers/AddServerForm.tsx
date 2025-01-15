@@ -10,7 +10,7 @@ import { useState } from "react";
 export function AddServerForm({ onServerAdded }: { onServerAdded: () => void }) {
   const { toast } = useToast();
   const [newServer, setNewServer] = useState({
-    name: "Тестовый сервер",
+    name: "Test Server",
     host: "89.223.70.180",
     ssh_username: "root",
     ssh_private_key: `-----BEGIN OPENSSH PRIVATE KEY-----
@@ -68,8 +68,8 @@ r5F8cbxtxUcAAAANaW5jcmVkb0Biay5ydQECAwQFBg==
   const handleAddServer = async () => {
     if (!newServer.name || !newServer.host) {
       toast({
-        title: "Ошибка",
-        description: "Заполните все обязательные поля",
+        title: "Error",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -79,16 +79,16 @@ r5F8cbxtxUcAAAANaW5jcmVkb0Biay5ydQECAwQFBg==
 
     if (error) {
       toast({
-        title: "Ошибка",
-        description: "Не удалось добавить сервер",
+        title: "Error",
+        description: "Failed to add server",
         variant: "destructive",
       });
       return;
     }
 
     toast({
-      title: "Успех",
-      description: "Сервер успешно добавлен",
+      title: "Success",
+      description: "Server added successfully",
     });
 
     setNewServer({
@@ -122,30 +122,30 @@ r5F8cbxtxUcAAAANaW5jcmVkb0Biay5ydQECAwQFBg==
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Добавить новый сервер</CardTitle>
+        <CardTitle>Add New Server</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Название сервера</Label>
+            <Label htmlFor="name">Server Name</Label>
             <Input
               id="name"
               value={newServer.name}
               onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
-              placeholder="Введите название сервера"
+              placeholder="Enter server name"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="host">Хост</Label>
+            <Label htmlFor="host">Host</Label>
             <Input
               id="host"
               value={newServer.host}
               onChange={(e) => setNewServer({ ...newServer, host: e.target.value })}
-              placeholder="Например: example.com или 192.168.1.1"
+              placeholder="e.g., example.com or 192.168.1.1"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ssh_username">SSH Пользователь</Label>
+            <Label htmlFor="ssh_username">SSH Username</Label>
             <Input
               id="ssh_username"
               value={newServer.ssh_username}
@@ -154,7 +154,7 @@ r5F8cbxtxUcAAAANaW5jcmVkb0Biay5ydQECAwQFBg==
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ssh_private_key">Приватный SSH ключ</Label>
+            <Label htmlFor="ssh_private_key">Private SSH Key</Label>
             <Input
               id="ssh_private_key"
               type="file"
@@ -163,7 +163,7 @@ r5F8cbxtxUcAAAANaW5jcmVkb0Biay5ydQECAwQFBg==
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ssh_public_key">Публичный SSH ключ</Label>
+            <Label htmlFor="ssh_public_key">Public SSH Key</Label>
             <Input
               id="ssh_public_key"
               type="file"
@@ -174,7 +174,7 @@ r5F8cbxtxUcAAAANaW5jcmVkb0Biay5ydQECAwQFBg==
         </div>
         <Button onClick={handleAddServer} className="w-full md:w-auto">
           <PlusCircle className="mr-2 h-4 w-4" />
-          Добавить сервер
+          Add Server
         </Button>
       </CardContent>
     </Card>

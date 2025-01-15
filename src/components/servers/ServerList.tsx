@@ -24,31 +24,31 @@ export function ServerList({ servers, isLoading, selectedServer, onSelectServer 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Список серверов</CardTitle>
+        <CardTitle>Server List</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Название</TableHead>
-              <TableHead>Хост</TableHead>
-              <TableHead>SSH Пользователь</TableHead>
-              <TableHead>SSH Ключи</TableHead>
-              <TableHead>Дата создания</TableHead>
-              <TableHead>Действия</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Host</TableHead>
+              <TableHead>SSH Username</TableHead>
+              <TableHead>SSH Keys</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center">
-                  Загрузка...
+                  Loading...
                 </TableCell>
               </TableRow>
             ) : servers?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center">
-                  Нет добавленных серверов
+                  No servers added yet
                 </TableCell>
               </TableRow>
             ) : (
@@ -58,12 +58,12 @@ export function ServerList({ servers, isLoading, selectedServer, onSelectServer 
                   <TableCell>{server.host}</TableCell>
                   <TableCell>{server.ssh_username}</TableCell>
                   <TableCell>
-                    {server.ssh_private_key ? "✅" : "❌"} Приватный
+                    {server.ssh_private_key ? "✅" : "❌"} Private
                     <br />
-                    {server.ssh_public_key ? "✅" : "❌"} Публичный
+                    {server.ssh_public_key ? "✅" : "❌"} Public
                   </TableCell>
                   <TableCell>
-                    {new Date(server.created_at).toLocaleDateString("ru-RU")}
+                    {new Date(server.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -72,7 +72,7 @@ export function ServerList({ servers, isLoading, selectedServer, onSelectServer 
                       onClick={() => onSelectServer(server.id)}
                     >
                       <Terminal className="mr-2 h-4 w-4" />
-                      Управление
+                      Manage
                     </Button>
                   </TableCell>
                 </TableRow>
