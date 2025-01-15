@@ -31,18 +31,26 @@ app.use('/api/yandex', yandexRoutes);
 // Проверяем наличие SSL сертификатов
 const sslPath = '/etc/letsencrypt/live/89.223.70.180/';
 if (fs.existsSync(sslPath)) {
-  const httpsOptions = {
-    key: fs.readFileSync(`${sslPath}privkey.pem`),
-    cert: fs.readFileSync(`${sslPath}fullchain.pem`)
-  };
+  try {
+    const httpsOptions = {
+      key: fs.readFileSync(`${sslPath}privkey.pem`),
+      cert: fs.readFileSync(`${sslPath}fullchain.pem`)
+    };
 
-  // Создаем HTTPS сервер
-  https.createServer(httpsOptions, app).listen(port, () => {
-    console.log(`HTTPS Server running on port ${port}`);
-  });
+    // Создаем HTTPS сервер
+    https.createServer(httpsOptions, app).listen(port, () => {
+      console.log(`HTTPS Server running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Error starting HTTPS server:', error);
+    // Если возникла ошибка при запуске HTTPS, запускаем HTTP
+    app.listen(port, () => {
+      console.log(`HTTP Server running on port ${port} (HTTPS failed to start)`);
+    });
+  }
 } else {
   // Если сертификатов нет, запускаем HTTP сервер
   app.listen(port, () => {
-    console.log(`HTTP Server running on port ${port}`);
+    console.log(`HTTP Server running on port ${port} (No SSL certificates found)`);
   });
 }

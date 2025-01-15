@@ -55,8 +55,18 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       // Step 3: Get the certificate (using --standalone since we don't have nginx)
       await executeCommand('sudo certbot certonly --standalone --agree-tos --non-interactive -d 89.223.70.180 --register-unsafely-without-email');
       
-      // Step 4: Start the server back
+      // Step 4: Verify certificate exists
+      await executeCommand('ls -la /etc/letsencrypt/live/89.223.70.180/');
+      
+      // Step 5: Set correct permissions for certificate files
+      await executeCommand('sudo chown -R root:root /etc/letsencrypt/live/89.223.70.180/');
+      await executeCommand('sudo chmod -R 755 /etc/letsencrypt/live/89.223.70.180/');
+      
+      // Step 6: Start the server back with new configuration
       await executeCommand('sudo pm2 start all');
+      
+      // Step 7: Verify HTTPS is working by checking the port
+      await executeCommand('sudo netstat -tulpn | grep LISTEN');
       
       toast({
         title: "HTTPS Setup Complete",
@@ -84,6 +94,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       <Button 
         onClick={setupHttps} 
         disabled={isExecuting}
+        className="w-full"
       >
         {isExecuting ? "Setting up HTTPS..." : "Setup HTTPS"}
       </Button>
