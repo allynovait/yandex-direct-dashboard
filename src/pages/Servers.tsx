@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Terminal } from "lucide-react";
 import { useState } from "react";
 
 interface Server {
@@ -19,6 +19,16 @@ interface Server {
   ssh_public_key: string | null;
 }
 
+interface Command {
+  id: string;
+  server_id: string;
+  command: string;
+  status: string;
+  output: string | null;
+  executed_at: string | null;
+  created_at: string;
+}
+
 export default function Servers() {
   const { toast } = useToast();
   const [newServer, setNewServer] = useState({
@@ -28,14 +38,31 @@ export default function Servers() {
     ssh_private_key: "",
     ssh_public_key: "",
   });
+  const [selectedServer, setSelectedServer] = useState<string | null>(null);
+  const [command, setCommand] = useState("");
 
-  const { data: servers, isLoading, refetch } = useQuery({
+  const { data: servers, isLoading: serversLoading, refetch: refetchServers } = useQuery({
     queryKey: ["servers"],
     queryFn: async () => {
       const { data, error } = await supabase.from("servers").select("*");
       if (error) throw error;
       return data as Server[];
     },
+  });
+
+  const { data: commands, isLoading: commandsLoading, refetch: refetchCommands } = useQuery({
+    queryKey: ["commands", selectedServer],
+    queryFn: async () => {
+      if (!selectedServer) return [];
+      const { data, error } = await supabase
+        .from("server_commands")
+        .select("*")
+        .eq("server_id", selectedServer)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Command[];
+    },
+    enabled: !!selectedServer,
   });
 
   const handleAddServer = async () => {
@@ -71,7 +98,7 @@ export default function Servers() {
       ssh_private_key: "",
       ssh_public_key: "",
     });
-    refetch();
+    refetchServers();
   };
 
   const handleFileUpload = async (
@@ -90,6 +117,39 @@ export default function Servers() {
       });
     };
     reader.readAsText(file);
+  };
+
+  const executeCommand = async () => {
+    if (!selectedServer || !command.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Выберите сервер и введите команду",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("execute-command", {
+        body: { serverId: selectedServer, command: command.trim() },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Успех",
+        description: "Команда отправлена на выполнение",
+      });
+
+      setCommand("");
+      refetchCommands();
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось выполнить команду",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -170,7 +230,7 @@ export default function Servers() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {serversLoading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center">
                     Загрузка...
@@ -197,7 +257,12 @@ export default function Servers() {
                       {new Date(server.created_at).toLocaleDateString("ru-RU")}
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant={selectedServer === server.id ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedServer(server.id)}
+                      >
+                        <Terminal className="mr-2 h-4 w-4" />
                         Управление
                       </Button>
                     </TableCell>
@@ -208,6 +273,78 @@ export default function Servers() {
           </Table>
         </CardContent>
       </Card>
+
+      {selectedServer && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Выполнить команду</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4">
+                <Input
+                  value={command}
+                  onChange={(e) => setCommand(e.target.value)}
+                  placeholder="Введите команду для выполнения"
+                  className="flex-1"
+                />
+                <Button onClick={executeCommand}>
+                  <Terminal className="mr-2 h-4 w-4" />
+                  Выполнить
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>История команд</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Команда</TableHead>
+                    <TableHead>Статус</TableHead>
+                    <TableHead>Результат</TableHead>
+                    <TableHead>Время выполнения</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {commandsLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">
+                        Загрузка...
+                      </TableCell>
+                    </TableRow>
+                  ) : commands?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">
+                        Нет выполненных команд
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    commands?.map((cmd) => (
+                      <TableRow key={cmd.id}>
+                        <TableCell className="font-mono">{cmd.command}</TableCell>
+                        <TableCell>{cmd.status}</TableCell>
+                        <TableCell className="font-mono whitespace-pre-wrap">
+                          {cmd.output}
+                        </TableCell>
+                        <TableCell>
+                          {cmd.executed_at
+                            ? new Date(cmd.executed_at).toLocaleString("ru-RU")
+                            : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
