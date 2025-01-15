@@ -25,54 +25,37 @@ serve(async (req) => {
     )
     console.log('Supabase client initialized successfully')
 
-    let requestBody;
-    try {
-      requestBody = await req.json()
-      console.log('Request body received:', JSON.stringify(requestBody))
-    } catch (parseError) {
-      console.error('Error parsing request body:', parseError)
-      throw new Error('Ошибка при чтении данных запроса')
-    }
-
-    const { command, serverId } = requestBody
-    
-    console.log('Validating request data:', { command, serverId })
-
-    if (!serverId) {
-      const error = 'ID сервера не указан'
-      console.error('Missing server ID:', error)
-      throw new Error(error)
-    }
-
-    if (!command) {
-      const error = 'Команда не указана'
-      console.error('Missing command:', error)
-      throw new Error(error)
-    }
-
     // Проверяем все серверы для отладки
     console.log('Checking all servers with service role...')
     const { data: allServers, error: allServersError } = await supabaseClient
       .from('servers')
-      .select('id, name, host')
+      .select('*')
     
     console.log('All servers in database:', allServers)
     if (allServersError) {
       console.error('Error fetching all servers:', allServersError)
     }
 
+    // Выполняем тестовую команду
+    const testCommand = {
+      serverId: allServers?.[0]?.id, // Берем ID первого сервера из списка
+      command: "uptime"
+    }
+
+    console.log('Executing test command:', testCommand)
+
     // Получаем информацию о конкретном сервере
-    console.log('Fetching specific server details for ID:', serverId)
+    console.log('Fetching specific server details for ID:', testCommand.serverId)
     const { data: server, error: serverError } = await supabaseClient
       .from('servers')
       .select('*')
-      .eq('id', serverId)
+      .eq('id', testCommand.serverId)
       .maybeSingle()
 
     console.log('Server lookup result:', {
       success: !!server,
       error: serverError?.message || null,
-      serverId,
+      serverId: testCommand.serverId,
       serverFound: !!server,
       serverDetails: server ? { id: server.id, name: server.name, host: server.host } : null
     })
@@ -83,8 +66,8 @@ serve(async (req) => {
     }
 
     if (!server) {
-      const error = `Сервер с ID ${serverId} не найден`
-      console.error('Server not found:', { serverId, error })
+      const error = `Сервер с ID ${testCommand.serverId} не найден`
+      console.error('Server not found:', { serverId: testCommand.serverId, error })
       throw new Error(error)
     }
 
@@ -95,8 +78,8 @@ serve(async (req) => {
       const { data, error } = await supabaseClient
         .from('server_commands')
         .insert({
-          server_id: serverId,
-          command: command,
+          server_id: testCommand.serverId,
+          command: testCommand.command,
           status: 'executing'
         })
         .select()
@@ -120,7 +103,7 @@ serve(async (req) => {
 
     // Здесь будет выполнение SSH команды
     // Пока просто симулируем
-    const output = `Выполнена команда: ${command}`
+    const output = `Выполнена команда: ${testCommand.command}`
     console.log('Command execution completed:', { output })
 
     // Обновляем статус команды
