@@ -22,24 +22,24 @@ serve(async (req) => {
     console.log('Executing command:', command, 'on server:', serverId)
 
     if (!serverId) {
-      throw new Error('Server ID is required')
+      throw new Error('ID сервера не указан')
     }
 
-    // Get server information
+    // Get server information using maybeSingle() instead of single()
     const { data: server, error: serverError } = await supabaseClient
       .from('servers')
       .select('*')
       .eq('id', serverId)
-      .single()
+      .maybeSingle()
 
     console.log('Server lookup result:', server ? 'Found' : 'Not found', 'Error:', serverError)
 
     if (serverError) {
-      throw new Error(`Failed to fetch server details: ${serverError.message}`)
+      throw new Error(`Ошибка при получении данных сервера: ${serverError.message}`)
     }
 
     if (!server) {
-      throw new Error('Server not found')
+      throw new Error('Сервер не найден')
     }
 
     // Create command record
@@ -54,14 +54,14 @@ serve(async (req) => {
       .single()
 
     if (commandError) {
-      throw new Error(`Failed to create command record: ${commandError.message}`)
+      throw new Error(`Ошибка при создании записи команды: ${commandError.message}`)
     }
 
     console.log('Command record created:', commandRecord.id)
 
     // Here would be the actual SSH command execution
     // For now, we're just simulating it
-    const output = `Executed command: ${command}`
+    const output = `Выполнена команда: ${command}`
 
     // Update command status
     const { error: updateError } = await supabaseClient
@@ -74,7 +74,7 @@ serve(async (req) => {
       .eq('id', commandRecord.id)
 
     if (updateError) {
-      throw new Error(`Failed to update command status: ${updateError.message}`)
+      throw new Error(`Ошибка при обновлении статуса команды: ${updateError.message}`)
     }
 
     console.log('Command execution completed successfully')
