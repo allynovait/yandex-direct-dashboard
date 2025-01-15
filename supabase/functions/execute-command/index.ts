@@ -12,14 +12,15 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
+    // Initialize Supabase client with detailed logging
     console.log('Initializing Supabase client...')
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
+    console.log('Supabase client initialized successfully')
 
-    // Parse request body
+    // Parse request body with validation
     let requestBody;
     try {
       requestBody = await req.json()
@@ -31,39 +32,51 @@ serve(async (req) => {
 
     const { command, serverId } = requestBody
     
-    console.log('Processing command execution:', { command, serverId })
+    console.log('Validating request data:', { command, serverId })
 
     if (!serverId) {
       const error = 'ID сервера не указан'
-      console.error(error)
+      console.error('Missing server ID:', error)
+      throw new Error(error)
+    }
+
+    if (!command) {
+      const error = 'Команда не указана'
+      console.error('Missing command:', error)
       throw new Error(error)
     }
 
     // Get server information with detailed logging
     console.log('Fetching server details for ID:', serverId)
-    const { data: server, error: serverError } = await supabaseClient
+    const { data: servers, error: serversError } = await supabaseClient
       .from('servers')
       .select('*')
       .eq('id', serverId)
-      .maybeSingle()
-    
+
     console.log('Server lookup result:', {
-      success: !!server,
-      error: serverError?.message || null,
+      success: !!servers,
+      error: serversError?.message || null,
       serverId,
-      serverFound: server ? 'yes' : 'no'
+      serversCount: servers?.length || 0
     })
 
-    if (serverError) {
-      console.error('Server lookup error:', serverError)
-      throw new Error(`Ошибка при получении данных сервера: ${serverError.message}`)
+    if (serversError) {
+      console.error('Server lookup error:', serversError)
+      throw new Error(`Ошибка при получении данных сервера: ${serversError.message}`)
     }
 
-    if (!server) {
+    if (!servers || servers.length === 0) {
       const error = `Сервер с ID ${serverId} не найден`
       console.error('Server not found:', { serverId, error })
       throw new Error(error)
     }
+
+    const server = servers[0]
+    console.log('Server found:', { 
+      serverId: server.id,
+      name: server.name,
+      host: server.host
+    })
 
     // Create command record with logging
     console.log('Creating command record...')
