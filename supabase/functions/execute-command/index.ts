@@ -109,14 +109,12 @@ serve(async (req) => {
 
         let privateKey = server.ssh_private_key || '';
         
-        // Улучшенное форматирование приватного ключа
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
           .filter(line => line.length > 0 && !line.includes('COMMENT'))
           .join('\n');
 
-        // Проверяем наличие заголовка и футера
         if (!privateKey.includes('-----BEGIN') || !privateKey.includes('-----END')) {
           throw new Error('Invalid private key format: missing header or footer');
         }
@@ -161,10 +159,7 @@ serve(async (req) => {
               'aes192-ctr',
               'aes256-ctr',
               'aes128-gcm',
-              'aes256-gcm',
-              '3des-cbc',
-              'aes128-cbc',
-              'aes256-cbc'
+              'aes256-gcm'
             ],
             hmac: [
               'hmac-sha2-256',
