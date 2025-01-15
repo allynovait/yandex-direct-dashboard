@@ -1,6 +1,7 @@
 import { YandexStats, DateRange } from "@/types/yandex";
 
-const API_URL = 'http://localhost:3000/api/yandex';
+// Используем URL тестового сервера вместо localhost
+const API_URL = 'http://89.223.70.180:3000/api/yandex';
 
 export class YandexDirectAPI {
   private token: string;
