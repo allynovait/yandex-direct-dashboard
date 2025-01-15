@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoginScreenProps {
   onSuccess: () => void;
@@ -13,17 +14,33 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
   const [password, setPassword] = useState("");
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (username === "ini" && password === "Marketing123") {
-      localStorage.setItem("isAuthenticated", "true");
-      onSuccess();
-    } else {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: username,
+        password: password,
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Ошибка авторизации",
+          description: error.message,
+        });
+        return;
+      }
+
+      if (data.session) {
+        localStorage.setItem("isAuthenticated", "true");
+        onSuccess();
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Ошибка авторизации",
-        description: "Неверный логин или пароль",
+        description: "Произошла ошибка при попытке входа",
       });
     }
   };
@@ -39,10 +56,10 @@ export const LoginScreen = ({ onSuccess }: LoginScreenProps) => {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Логин</Label>
+            <Label htmlFor="username">Email</Label>
             <Input
               id="username"
-              type="text"
+              type="email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
