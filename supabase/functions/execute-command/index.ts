@@ -18,19 +18,31 @@ serve(async (req) => {
     )
 
     const { command, serverId } = await req.json()
+    
+    console.log('Executing command:', command, 'on server:', serverId)
 
-    // Получаем информацию о сервере
+    if (!serverId) {
+      throw new Error('Server ID is required')
+    }
+
+    // Get server information
     const { data: server, error: serverError } = await supabaseClient
       .from('servers')
       .select('*')
       .eq('id', serverId)
       .single()
 
-    if (serverError || !server) {
-      throw new Error('Сервер не найден')
+    console.log('Server lookup result:', server ? 'Found' : 'Not found', 'Error:', serverError)
+
+    if (serverError) {
+      throw new Error(`Failed to fetch server details: ${serverError.message}`)
     }
 
-    // Создаем запись о команде
+    if (!server) {
+      throw new Error('Server not found')
+    }
+
+    // Create command record
     const { data: commandRecord, error: commandError } = await supabaseClient
       .from('server_commands')
       .insert({
@@ -42,14 +54,16 @@ serve(async (req) => {
       .single()
 
     if (commandError) {
-      throw new Error('Ошибка при создании записи о команде')
+      throw new Error(`Failed to create command record: ${commandError.message}`)
     }
 
-    // Здесь будет логика выполнения команды на сервере
-    // В реальном приложении здесь нужно использовать SSH для подключения к серверу
-    const output = `Выполнена команда: ${command}`
+    console.log('Command record created:', commandRecord.id)
 
-    // Обновляем статус команды
+    // Here would be the actual SSH command execution
+    // For now, we're just simulating it
+    const output = `Executed command: ${command}`
+
+    // Update command status
     const { error: updateError } = await supabaseClient
       .from('server_commands')
       .update({
@@ -60,8 +74,10 @@ serve(async (req) => {
       .eq('id', commandRecord.id)
 
     if (updateError) {
-      throw new Error('Ошибка при обновлении статуса команды')
+      throw new Error(`Failed to update command status: ${updateError.message}`)
     }
+
+    console.log('Command execution completed successfully')
 
     return new Response(
       JSON.stringify({ success: true, output }),
@@ -71,6 +87,8 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Error executing command:', error.message)
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
