@@ -31,7 +31,7 @@ serve(async (req) => {
 
     const { command, serverId } = requestBody
     
-    console.log('Parsed command data:', { command, serverId })
+    console.log('Processing command execution:', { command, serverId })
 
     if (!serverId) {
       const error = 'ID сервера не указан'
@@ -39,38 +39,34 @@ serve(async (req) => {
       throw new Error(error)
     }
 
-    // Get server information
-    let serverResult;
-    try {
-      serverResult = await supabaseClient
-        .from('servers')
-        .select('*')
-        .eq('id', serverId)
-        .maybeSingle()
-      
-      console.log('Server lookup result:', {
-        success: !!serverResult.data,
-        error: serverResult.error?.message || null,
-        serverId,
-        data: serverResult.data ? JSON.stringify(serverResult.data) : null
-      })
-    } catch (serverError) {
-      console.error('Error fetching server:', serverError)
+    // Get server information with detailed logging
+    console.log('Fetching server details for ID:', serverId)
+    const { data: server, error: serverError } = await supabaseClient
+      .from('servers')
+      .select('*')
+      .eq('id', serverId)
+      .maybeSingle()
+    
+    console.log('Server lookup result:', {
+      success: !!server,
+      error: serverError?.message || null,
+      serverId,
+      serverFound: server ? 'yes' : 'no'
+    })
+
+    if (serverError) {
+      console.error('Server lookup error:', serverError)
       throw new Error(`Ошибка при получении данных сервера: ${serverError.message}`)
     }
 
-    if (serverResult.error) {
-      console.error('Server lookup error:', serverResult.error)
-      throw new Error(`Ошибка при получении данных сервера: ${serverResult.error.message}`)
-    }
-
-    if (!serverResult.data) {
+    if (!server) {
       const error = `Сервер с ID ${serverId} не найден`
-      console.error(error)
+      console.error('Server not found:', { serverId, error })
       throw new Error(error)
     }
 
-    // Create command record
+    // Create command record with logging
+    console.log('Creating command record...')
     let commandRecord;
     try {
       const { data, error } = await supabaseClient
@@ -83,10 +79,13 @@ serve(async (req) => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating command record:', error)
+        throw error
+      }
+      
       commandRecord = data
-
-      console.log('Command record created:', {
+      console.log('Command record created successfully:', {
         commandId: commandRecord.id,
         serverId: commandRecord.server_id,
         command: commandRecord.command
@@ -99,9 +98,11 @@ serve(async (req) => {
     // Here would be the actual SSH command execution
     // For now, we're just simulating it
     const output = `Выполнена команда: ${command}`
+    console.log('Command execution completed:', { output })
 
-    // Update command status
+    // Update command status with logging
     try {
+      console.log('Updating command status...')
       const { error: updateError } = await supabaseClient
         .from('server_commands')
         .update({
@@ -111,13 +112,12 @@ serve(async (req) => {
         })
         .eq('id', commandRecord.id)
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Error updating command status:', updateError)
+        throw updateError
+      }
 
-      console.log('Command execution completed successfully:', {
-        commandId: commandRecord.id,
-        status: 'completed',
-        output
-      })
+      console.log('Command status updated successfully')
     } catch (updateError) {
       console.error('Error updating command status:', updateError)
       throw new Error(`Ошибка при обновлении статуса команды: ${updateError.message}`)
@@ -138,7 +138,13 @@ serve(async (req) => {
     })
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: {
+          stack: error.stack,
+          cause: error.cause
+        }
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 
