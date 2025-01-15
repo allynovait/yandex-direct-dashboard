@@ -31,6 +31,8 @@ serve(async (req) => {
       throw new Error('Server ID and command are required')
     }
 
+    console.log('Executing command:', command)
+
     // Get server details
     const { data: server, error: serverError } = await supabaseClient
       .from('servers')
@@ -63,8 +65,10 @@ serve(async (req) => {
     try {
       const output = await new Promise((resolve, reject) => {
         ssh.on('ready', () => {
+          console.log('SSH connection established')
           ssh.exec(command, (err, stream) => {
             if (err) {
+              console.error('SSH exec error:', err)
               reject(err)
               return
             }
@@ -73,43 +77,79 @@ serve(async (req) => {
             let errorOutput = ''
 
             stream.on('data', (data: Buffer) => {
-              output += data.toString()
+              const chunk = data.toString()
+              console.log('Stream data:', chunk)
+              output += chunk
             })
 
             stream.stderr.on('data', (data: Buffer) => {
-              errorOutput += data.toString()
+              const chunk = data.toString()
+              console.error('Stream error:', chunk)
+              errorOutput += chunk
             })
 
             stream.on('close', () => {
+              console.log('Stream closed')
               resolve(errorOutput || output)
             })
 
-            stream.on('error', reject)
+            stream.on('error', (err) => {
+              console.error('Stream error:', err)
+              reject(err)
+            })
           })
         })
 
-        ssh.on('error', reject)
+        ssh.on('error', (err) => {
+          console.error('SSH connection error:', err)
+          reject(err)
+        })
 
+        ssh.on('handshake', (negotiated) => {
+          console.log('SSH handshake complete. Negotiated algorithms:', negotiated)
+        })
+
+        console.log('Attempting SSH connection to:', server.host)
         ssh.connect({
           host: server.host,
           username: server.ssh_username,
           privateKey: server.ssh_private_key,
+          debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
               'diffie-hellman-group1-sha1',
               'diffie-hellman-group14-sha1',
               'diffie-hellman-group14-sha256',
               'diffie-hellman-group16-sha512',
-              'diffie-hellman-group18-sha512'
+              'diffie-hellman-group18-sha512',
+              'diffie-hellman-group-exchange-sha1',
+              'diffie-hellman-group-exchange-sha256'
             ],
             cipher: [
               'aes128-ctr',
               'aes192-ctr',
               'aes256-ctr',
               'aes128-gcm',
-              'aes256-gcm'
+              'aes256-gcm',
+              'aes128-cbc',
+              'aes192-cbc',
+              'aes256-cbc'
+            ],
+            serverHostKey: [
+              'ssh-rsa',
+              'ssh-dss',
+              'ecdsa-sha2-nistp256',
+              'ecdsa-sha2-nistp384',
+              'ecdsa-sha2-nistp521'
+            ],
+            hmac: [
+              'hmac-sha1',
+              'hmac-sha1-96',
+              'hmac-sha2-256',
+              'hmac-sha2-512'
             ]
-          }
+          },
+          hostVerifier: () => true // Accept any host key
         })
       })
 
