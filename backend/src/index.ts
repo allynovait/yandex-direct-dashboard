@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import https from 'https';
 import yandexRoutes from './routes/yandexRoutes';
 
 const app = express();
@@ -26,6 +28,21 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use('/api/yandex', yandexRoutes);
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// Проверяем наличие SSL сертификатов
+const sslPath = '/etc/letsencrypt/live/89.223.70.180/';
+if (fs.existsSync(sslPath)) {
+  const httpsOptions = {
+    key: fs.readFileSync(`${sslPath}privkey.pem`),
+    cert: fs.readFileSync(`${sslPath}fullchain.pem`)
+  };
+
+  // Создаем HTTPS сервер
+  https.createServer(httpsOptions, app).listen(port, () => {
+    console.log(`HTTPS Server running on port ${port}`);
+  });
+} else {
+  // Если сертификатов нет, запускаем HTTP сервер
+  app.listen(port, () => {
+    console.log(`HTTP Server running on port ${port}`);
+  });
+}

@@ -1,34 +1,66 @@
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Terminal } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-interface CommandExecutorProps {
-  command: string;
-  onCommandChange: (command: string) => void;
-  onExecuteCommand: () => void;
-}
+export function CommandExecutor({ serverId }: { serverId: string }) {
+  const [isExecuting, setIsExecuting] = useState(false);
+  const { toast } = useToast();
 
-export function CommandExecutor({ command, onCommandChange, onExecuteCommand }: CommandExecutorProps) {
+  const executeCommand = async (command: string) => {
+    setIsExecuting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('execute-command', {
+        body: { serverId, command }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Command executed",
+        description: `Output: ${data.output}`,
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error executing command:', error);
+      toast({
+        title: "Error executing command",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  const setupHttps = async () => {
+    // Step 1: Update and install certbot
+    await executeCommand('sudo apt-get update && sudo apt-get install -y certbot');
+    
+    // Step 2: Stop the Node.js server to free port 80
+    await executeCommand('sudo pm2 stop all');
+    
+    // Step 3: Get the certificate (using --standalone since we don't have nginx)
+    await executeCommand('sudo certbot certonly --standalone --agree-tos --non-interactive -d 89.223.70.180 --register-unsafely-without-email');
+    
+    // Step 4: Start the server back
+    await executeCommand('sudo pm2 start all');
+    
+    toast({
+      title: "HTTPS Setup",
+      description: "HTTPS setup process completed. Check the command history for details.",
+    });
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Выполнить команду</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex gap-4">
-          <Input
-            value={command}
-            onChange={(e) => onCommandChange(e.target.value)}
-            placeholder="Введите команду для выполнения"
-            className="flex-1"
-          />
-          <Button onClick={onExecuteCommand}>
-            <Terminal className="mr-2 h-4 w-4" />
-            Выполнить
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <Button 
+        onClick={setupHttps} 
+        disabled={isExecuting}
+      >
+        {isExecuting ? "Setting up HTTPS..." : "Setup HTTPS"}
+      </Button>
+    </div>
   );
 }
