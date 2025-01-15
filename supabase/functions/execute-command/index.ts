@@ -116,8 +116,11 @@ serve(async (req) => {
         // Форматируем приватный ключ
         let privateKey = server.ssh_private_key || '';
         
-        // Убираем все пробелы и переносы строк
-        privateKey = privateKey.replace(/\s+/g, '\n');
+        // Убираем лишние пробелы в начале и конце строк
+        privateKey = privateKey
+          .split('\n')
+          .map(line => line.trim())
+          .join('\n');
         
         // Проверяем и добавляем заголовок и футер, если их нет
         if (!privateKey.includes('-----BEGIN')) {
@@ -129,6 +132,8 @@ serve(async (req) => {
           hasHeader: privateKey.includes('-----BEGIN'),
           hasFooter: privateKey.includes('-----END'),
           length: privateKey.length,
+          firstLine: privateKey.split('\n')[0],
+          lastLine: privateKey.split('\n').slice(-1)[0]
         })
 
         ssh.connect({
@@ -177,7 +182,7 @@ serve(async (req) => {
               'hmac-md5-96'
             ]
           },
-          hostVerifier: () => true // Принимаем любой хост-ключ для разработки
+          hostVerifier: () => true
         })
       })
 
