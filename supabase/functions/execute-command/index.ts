@@ -31,45 +31,28 @@ serve(async (req) => {
       .from('servers')
       .select('*')
     
-    console.log('All servers in database:', allServers)
     if (allServersError) {
       console.error('Error fetching all servers:', allServersError)
+      throw new Error(`Ошибка при получении списка серверов: ${allServersError.message}`)
     }
 
-    // Выполняем тестовую команду
+    if (!allServers || allServers.length === 0) {
+      console.error('No servers found in database')
+      throw new Error('В базе данных нет серверов')
+    }
+
+    console.log('All servers in database:', JSON.stringify(allServers, null, 2))
+
+    // Выполняем тестовую команду на первом сервере
+    const firstServer = allServers[0]
+    console.log('Selected first server for testing:', JSON.stringify(firstServer, null, 2))
+
     const testCommand = {
-      serverId: allServers?.[0]?.id, // Берем ID первого сервера из списка
+      serverId: firstServer.id,
       command: "uptime"
     }
 
     console.log('Executing test command:', testCommand)
-
-    // Получаем информацию о конкретном сервере
-    console.log('Fetching specific server details for ID:', testCommand.serverId)
-    const { data: server, error: serverError } = await supabaseClient
-      .from('servers')
-      .select('*')
-      .eq('id', testCommand.serverId)
-      .maybeSingle()
-
-    console.log('Server lookup result:', {
-      success: !!server,
-      error: serverError?.message || null,
-      serverId: testCommand.serverId,
-      serverFound: !!server,
-      serverDetails: server ? { id: server.id, name: server.name, host: server.host } : null
-    })
-
-    if (serverError) {
-      console.error('Server lookup error:', serverError)
-      throw new Error(`Ошибка при получении данных сервера: ${serverError.message}`)
-    }
-
-    if (!server) {
-      const error = `Сервер с ID ${testCommand.serverId} не найден`
-      console.error('Server not found:', { serverId: testCommand.serverId, error })
-      throw new Error(error)
-    }
 
     // Создаем запись о команде
     console.log('Creating command record...')
@@ -103,7 +86,7 @@ serve(async (req) => {
 
     // Здесь будет выполнение SSH команды
     // Пока просто симулируем
-    const output = `Выполнена команда: ${testCommand.command}`
+    const output = `Выполнена тестовая команда "${testCommand.command}" на сервере ${firstServer.name} (${firstServer.host})`
     console.log('Command execution completed:', { output })
 
     // Обновляем статус команды
