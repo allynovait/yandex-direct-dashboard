@@ -104,16 +104,24 @@ serve(async (req) => {
         })
 
         ssh.on('handshake', (negotiated) => {
-          console.log('SSH handshake complete. Negotiated algorithms:', negotiated)
+          console.log('SSH handshake details:', {
+            kex: negotiated.kex,
+            serverHostKey: negotiated.serverHostKey,
+            cipher: negotiated.cipher,
+            mac: negotiated.mac,
+            compression: negotiated.compression,
+          })
         })
 
-        // Format private key by ensuring it has the correct header and footer
+        // Форматируем приватный ключ
         let privateKey = server.ssh_private_key || '';
+        
+        // Проверяем и добавляем заголовок и футер, если их нет
         if (!privateKey.includes('-----BEGIN')) {
           privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
         }
 
-        // Clean up any extra whitespace or line breaks
+        // Очищаем от лишних пробелов и переносов строк
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
@@ -121,6 +129,12 @@ serve(async (req) => {
           .join('\n');
 
         console.log('Attempting SSH connection to:', server.host)
+        console.log('SSH key format check:', {
+          hasHeader: privateKey.includes('-----BEGIN'),
+          hasFooter: privateKey.includes('-----END'),
+          length: privateKey.length,
+        })
+
         ssh.connect({
           host: server.host,
           username: server.ssh_username,
@@ -134,7 +148,10 @@ serve(async (req) => {
               'diffie-hellman-group16-sha512',
               'diffie-hellman-group18-sha512',
               'diffie-hellman-group-exchange-sha1',
-              'diffie-hellman-group-exchange-sha256'
+              'diffie-hellman-group-exchange-sha256',
+              'ecdh-sha2-nistp256',
+              'ecdh-sha2-nistp384',
+              'ecdh-sha2-nistp521'
             ],
             cipher: [
               'aes128-ctr',
@@ -151,16 +168,20 @@ serve(async (req) => {
               'ssh-dss',
               'ecdsa-sha2-nistp256',
               'ecdsa-sha2-nistp384',
-              'ecdsa-sha2-nistp521'
+              'ecdsa-sha2-nistp521',
+              'rsa-sha2-256',
+              'rsa-sha2-512'
             ],
             hmac: [
               'hmac-sha1',
               'hmac-sha1-96',
               'hmac-sha2-256',
-              'hmac-sha2-512'
+              'hmac-sha2-512',
+              'hmac-md5',
+              'hmac-md5-96'
             ]
           },
-          hostVerifier: () => true // Accept any host key
+          hostVerifier: () => true // Принимаем любой хост-ключ для разработки
         })
       })
 
