@@ -12,8 +12,9 @@ import {
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { TokenManager } from "@/components/TokenManager";
+import { TokenList } from "@/components/TokenList";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { getAllAccountsStats } from "@/services/yandexApi";
 import { LoginScreen } from "@/components/LoginScreen";
@@ -109,6 +110,7 @@ const Index = () => {
       </div>
 
       <TokenManager />
+      <TokenList />
       
       <div className="rounded-lg border bg-card">
         <Table>
