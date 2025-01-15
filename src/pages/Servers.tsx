@@ -1,11 +1,12 @@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AddServerForm } from "@/components/servers/AddServerForm";
 import { ServerList } from "@/components/servers/ServerList";
 import { CommandExecutor } from "@/components/servers/CommandExecutor";
 import { CommandHistory } from "@/components/servers/CommandHistory";
+import { LoginScreen } from "@/components/LoginScreen";
 
 interface Server {
   id: string;
@@ -31,6 +32,22 @@ export default function Servers() {
   const { toast } = useToast();
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
   const [command, setCommand] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsAuthenticated(!!session);
+      });
+
+      return () => subscription.unsubscribe();
+    };
+
+    checkAuth();
+  }, []);
 
   const { data: servers, isLoading: serversLoading, refetch: refetchServers } = useQuery({
     queryKey: ["servers"],
@@ -39,6 +56,7 @@ export default function Servers() {
       if (error) throw error;
       return data as Server[];
     },
+    enabled: isAuthenticated,
   });
 
   const { data: commands, isLoading: commandsLoading, refetch: refetchCommands } = useQuery({
@@ -53,7 +71,7 @@ export default function Servers() {
       if (error) throw error;
       return data as Command[];
     },
-    enabled: !!selectedServer,
+    enabled: !!selectedServer && isAuthenticated,
   });
 
   const executeCommand = async () => {
@@ -88,6 +106,10 @@ export default function Servers() {
       });
     }
   };
+
+  if (!isAuthenticated) {
+    return <LoginScreen onSuccess={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
