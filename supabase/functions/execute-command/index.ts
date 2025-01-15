@@ -17,12 +17,18 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    const { command, serverId } = await req.json()
+    // Log request body for debugging
+    const requestBody = await req.json()
+    console.log('Request body:', JSON.stringify(requestBody))
+
+    const { command, serverId } = requestBody
     
     console.log('Executing command:', command, 'on server:', serverId)
 
     if (!serverId) {
-      throw new Error('ID сервера не указан')
+      const error = 'ID сервера не указан'
+      console.error(error)
+      throw new Error(error)
     }
 
     // Get server information using maybeSingle() instead of single()
@@ -32,14 +38,22 @@ serve(async (req) => {
       .eq('id', serverId)
       .maybeSingle()
 
-    console.log('Server lookup result:', server ? 'Found' : 'Not found', 'Error:', serverError)
+    console.log('Server lookup result:', {
+      serverFound: !!server,
+      serverError: serverError?.message,
+      serverId,
+      serverDetails: server ? JSON.stringify(server) : null
+    })
 
     if (serverError) {
+      console.error('Server lookup error:', serverError)
       throw new Error(`Ошибка при получении данных сервера: ${serverError.message}`)
     }
 
     if (!server) {
-      throw new Error('Сервер не найден')
+      const error = `Сервер с ID ${serverId} не найден`
+      console.error(error)
+      throw new Error(error)
     }
 
     // Create command record
@@ -54,10 +68,15 @@ serve(async (req) => {
       .single()
 
     if (commandError) {
+      console.error('Command creation error:', commandError)
       throw new Error(`Ошибка при создании записи команды: ${commandError.message}`)
     }
 
-    console.log('Command record created:', commandRecord.id)
+    console.log('Command record created:', {
+      commandId: commandRecord.id,
+      serverId: commandRecord.server_id,
+      command: commandRecord.command
+    })
 
     // Here would be the actual SSH command execution
     // For now, we're just simulating it
@@ -74,10 +93,15 @@ serve(async (req) => {
       .eq('id', commandRecord.id)
 
     if (updateError) {
+      console.error('Command status update error:', updateError)
       throw new Error(`Ошибка при обновлении статуса команды: ${updateError.message}`)
     }
 
-    console.log('Command execution completed successfully')
+    console.log('Command execution completed successfully:', {
+      commandId: commandRecord.id,
+      status: 'completed',
+      output
+    })
 
     return new Response(
       JSON.stringify({ success: true, output }),
@@ -87,7 +111,10 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error executing command:', error.message)
+    console.error('Error executing command:', {
+      error: error.message,
+      stack: error.stack
+    })
     
     return new Response(
       JSON.stringify({ error: error.message }),
