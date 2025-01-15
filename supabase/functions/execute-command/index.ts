@@ -113,6 +113,13 @@ serve(async (req) => {
           privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
         }
 
+        // Clean up any extra whitespace or line breaks
+        privateKey = privateKey
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line)
+          .join('\n');
+
         console.log('Attempting SSH connection to:', server.host)
         ssh.connect({
           host: server.host,
