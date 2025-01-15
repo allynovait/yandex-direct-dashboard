@@ -1,7 +1,7 @@
 import { YandexStats, DateRange } from "@/types/yandex";
 
-// Используем URL тестового сервера вместо localhost
-const API_URL = 'http://89.223.70.180:3000/api/yandex';
+// Используем HTTPS URL тестового сервера
+const API_URL = 'https://89.223.70.180:3000/api/yandex';
 
 export class YandexDirectAPI {
   private token: string;
@@ -24,10 +24,13 @@ export class YandexDirectAPI {
       });
 
       if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Backend error response:", errorData);
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log("Backend response:", data);
       
       // Получаем баланс отдельным запросом
       const balanceResponse = await fetch(`${API_URL}/accounts`, {
@@ -39,7 +42,10 @@ export class YandexDirectAPI {
       let balance = 0;
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
+        console.log("Balance response:", balanceData);
         balance = balanceData.result?.accounts?.[0]?.Amount || 0;
+      } else {
+        console.error("Failed to fetch balance:", await balanceResponse.text());
       }
 
       // Извлекаем данные из отчета
