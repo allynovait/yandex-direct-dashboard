@@ -31,7 +31,6 @@ interface Command {
 export default function Servers() {
   const { toast } = useToast();
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
-  const [command, setCommand] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -74,39 +73,6 @@ export default function Servers() {
     enabled: !!selectedServer && isAuthenticated,
   });
 
-  const executeCommand = async () => {
-    if (!selectedServer || !command.trim()) {
-      toast({
-        title: "Ошибка",
-        description: "Выберите сервер и введите команду",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke("execute-command", {
-        body: { serverId: selectedServer, command: command.trim() },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Успех",
-        description: "Команда отправлена на выполнение",
-      });
-
-      setCommand("");
-      refetchCommands();
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось выполнить команду",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (!isAuthenticated) {
     return <LoginScreen onSuccess={() => setIsAuthenticated(true)} />;
   }
@@ -122,11 +88,7 @@ export default function Servers() {
       />
       {selectedServer && (
         <>
-          <CommandExecutor
-            command={command}
-            onCommandChange={setCommand}
-            onExecuteCommand={executeCommand}
-          />
+          <CommandExecutor serverId={selectedServer} />
           <CommandHistory commands={commands} isLoading={commandsLoading} />
         </>
       )}
