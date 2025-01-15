@@ -117,11 +117,6 @@ serve(async (req) => {
           .filter(line => line.length > 0)
           .join('\n');
 
-        // Проверяем и добавляем заголовок и футер, если их нет
-        if (!privateKey.includes('-----BEGIN')) {
-          privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
-        }
-
         console.log('SSH key format check:', {
           hasHeader: privateKey.includes('-----BEGIN'),
           hasFooter: privateKey.includes('-----END'),
@@ -140,36 +135,21 @@ serve(async (req) => {
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
-              'diffie-hellman-group-exchange-sha256',
-              'diffie-hellman-group14-sha256',
-              'diffie-hellman-group15-sha512',
-              'diffie-hellman-group16-sha512',
-              'diffie-hellman-group17-sha512',
-              'diffie-hellman-group18-sha512',
-              'ecdh-sha2-nistp256',
-              'ecdh-sha2-nistp384',
-              'ecdh-sha2-nistp521'
+              'diffie-hellman-group14-sha1',
+              'diffie-hellman-group1-sha1'
             ],
             serverHostKey: [
               'ssh-rsa',
-              'rsa-sha2-256',
-              'rsa-sha2-512',
-              'ssh-dss',
-              'ecdsa-sha2-nistp256',
-              'ecdsa-sha2-nistp384',
-              'ecdsa-sha2-nistp521'
+              'ssh-dss'
             ],
             cipher: [
               'aes128-ctr',
               'aes192-ctr',
-              'aes256-ctr',
-              'aes128-gcm',
-              'aes256-gcm'
+              'aes256-ctr'
             ],
             hmac: [
-              'hmac-sha2-256',
-              'hmac-sha2-512',
-              'hmac-sha1'
+              'hmac-sha1',
+              'hmac-sha2-256'
             ]
           },
           hostVerifier: () => true
