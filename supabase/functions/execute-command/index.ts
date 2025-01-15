@@ -12,7 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with detailed logging
     console.log('Initializing Supabase client...')
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -25,7 +24,6 @@ serve(async (req) => {
     )
     console.log('Supabase client initialized successfully')
 
-    // Parse request body with validation
     let requestBody;
     try {
       requestBody = await req.json()
@@ -51,33 +49,45 @@ serve(async (req) => {
       throw new Error(error)
     }
 
-    // Get server information with detailed logging
-    console.log('Fetching server details for ID:', serverId)
-    const { data: servers, error: serversError } = await supabaseClient
+    // Проверяем все серверы для отладки
+    console.log('Checking all servers...')
+    const { data: allServers, error: allServersError } = await supabaseClient
+      .from('servers')
+      .select('id, name, host')
+    
+    console.log('All servers in database:', allServers)
+    if (allServersError) {
+      console.error('Error fetching all servers:', allServersError)
+    }
+
+    // Получаем информацию о конкретном сервере
+    console.log('Fetching specific server details for ID:', serverId)
+    const { data: server, error: serverError } = await supabaseClient
       .from('servers')
       .select('*')
       .eq('id', serverId)
       .maybeSingle()
 
     console.log('Server lookup result:', {
-      success: !!servers,
-      error: serversError?.message || null,
+      success: !!server,
+      error: serverError?.message || null,
       serverId,
-      serverFound: !!servers
+      serverFound: !!server,
+      serverDetails: server ? { id: server.id, name: server.name, host: server.host } : null
     })
 
-    if (serversError) {
-      console.error('Server lookup error:', serversError)
-      throw new Error(`Ошибка при получении данных сервера: ${serversError.message}`)
+    if (serverError) {
+      console.error('Server lookup error:', serverError)
+      throw new Error(`Ошибка при получении данных сервера: ${serverError.message}`)
     }
 
-    if (!servers) {
+    if (!server) {
       const error = `Сервер с ID ${serverId} не найден`
       console.error('Server not found:', { serverId, error })
       throw new Error(error)
     }
 
-    // Create command record with logging
+    // Создаем запись о команде
     console.log('Creating command record...')
     let commandRecord;
     try {
@@ -107,12 +117,12 @@ serve(async (req) => {
       throw new Error(`Ошибка при создании записи команды: ${commandError.message}`)
     }
 
-    // Here would be the actual SSH command execution
-    // For now, we're just simulating it
+    // Здесь будет выполнение SSH команды
+    // Пока просто симулируем
     const output = `Выполнена команда: ${command}`
     console.log('Command execution completed:', { output })
 
-    // Update command status with logging
+    // Обновляем статус команды
     try {
       console.log('Updating command status...')
       const { error: updateError } = await supabaseClient
