@@ -54,6 +54,9 @@ export type Database = {
           id: string
           name: string
           ssh_key: string | null
+          ssh_private_key: string | null
+          ssh_public_key: string | null
+          ssh_username: string
           updated_at: string | null
         }
         Insert: {
@@ -62,6 +65,9 @@ export type Database = {
           id?: string
           name: string
           ssh_key?: string | null
+          ssh_private_key?: string | null
+          ssh_public_key?: string | null
+          ssh_username?: string
           updated_at?: string | null
         }
         Update: {
@@ -70,6 +76,9 @@ export type Database = {
           id?: string
           name?: string
           ssh_key?: string | null
+          ssh_private_key?: string | null
+          ssh_public_key?: string | null
+          ssh_username?: string
           updated_at?: string | null
         }
         Relationships: []

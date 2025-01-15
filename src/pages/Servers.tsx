@@ -14,11 +14,20 @@ interface Server {
   name: string;
   host: string;
   created_at: string;
+  ssh_username: string;
+  ssh_private_key: string | null;
+  ssh_public_key: string | null;
 }
 
 export default function Servers() {
   const { toast } = useToast();
-  const [newServer, setNewServer] = useState({ name: "", host: "" });
+  const [newServer, setNewServer] = useState({
+    name: "",
+    host: "",
+    ssh_username: "root",
+    ssh_private_key: "",
+    ssh_public_key: "",
+  });
 
   const { data: servers, isLoading, refetch } = useQuery({
     queryKey: ["servers"],
@@ -33,7 +42,7 @@ export default function Servers() {
     if (!newServer.name || !newServer.host) {
       toast({
         title: "Ошибка",
-        description: "Заполните все поля",
+        description: "Заполните все обязательные поля",
         variant: "destructive",
       });
       return;
@@ -55,8 +64,32 @@ export default function Servers() {
       description: "Сервер успешно добавлен",
     });
 
-    setNewServer({ name: "", host: "" });
+    setNewServer({
+      name: "",
+      host: "",
+      ssh_username: "root",
+      ssh_private_key: "",
+      ssh_public_key: "",
+    });
     refetch();
+  };
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    keyType: "private" | "public"
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setNewServer({
+        ...newServer,
+        [keyType === "private" ? "ssh_private_key" : "ssh_public_key"]: content,
+      });
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -85,6 +118,33 @@ export default function Servers() {
                 placeholder="Например: example.com или 192.168.1.1"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="ssh_username">SSH Пользователь</Label>
+              <Input
+                id="ssh_username"
+                value={newServer.ssh_username}
+                onChange={(e) => setNewServer({ ...newServer, ssh_username: e.target.value })}
+                placeholder="root"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ssh_private_key">Приватный SSH ключ</Label>
+              <Input
+                id="ssh_private_key"
+                type="file"
+                onChange={(e) => handleFileUpload(e, "private")}
+                accept=".pem,.key"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ssh_public_key">Публичный SSH ключ</Label>
+              <Input
+                id="ssh_public_key"
+                type="file"
+                onChange={(e) => handleFileUpload(e, "public")}
+                accept=".pub"
+              />
+            </div>
           </div>
           <Button onClick={handleAddServer} className="w-full md:w-auto">
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -103,6 +163,8 @@ export default function Servers() {
               <TableRow>
                 <TableHead>Название</TableHead>
                 <TableHead>Хост</TableHead>
+                <TableHead>SSH Пользователь</TableHead>
+                <TableHead>SSH Ключи</TableHead>
                 <TableHead>Дата создания</TableHead>
                 <TableHead>Действия</TableHead>
               </TableRow>
@@ -110,13 +172,13 @@ export default function Servers() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     Загрузка...
                   </TableCell>
                 </TableRow>
               ) : servers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={6} className="text-center">
                     Нет добавленных серверов
                   </TableCell>
                 </TableRow>
@@ -125,6 +187,12 @@ export default function Servers() {
                   <TableRow key={server.id}>
                     <TableCell>{server.name}</TableCell>
                     <TableCell>{server.host}</TableCell>
+                    <TableCell>{server.ssh_username}</TableCell>
+                    <TableCell>
+                      {server.ssh_private_key ? "✅" : "❌"} Приватный
+                      <br />
+                      {server.ssh_public_key ? "✅" : "❌"} Публичный
+                    </TableCell>
                     <TableCell>
                       {new Date(server.created_at).toLocaleDateString("ru-RU")}
                     </TableCell>
