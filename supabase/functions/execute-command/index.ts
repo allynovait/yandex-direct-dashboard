@@ -116,17 +116,13 @@ serve(async (req) => {
         // Форматируем приватный ключ
         let privateKey = server.ssh_private_key || '';
         
+        // Убираем все пробелы и переносы строк
+        privateKey = privateKey.replace(/\s+/g, '\n');
+        
         // Проверяем и добавляем заголовок и футер, если их нет
         if (!privateKey.includes('-----BEGIN')) {
           privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
         }
-
-        // Очищаем от лишних пробелов и переносов строк
-        privateKey = privateKey
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line)
-          .join('\n');
 
         console.log('Attempting SSH connection to:', server.host)
         console.log('SSH key format check:', {
