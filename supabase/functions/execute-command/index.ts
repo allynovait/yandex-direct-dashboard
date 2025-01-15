@@ -52,22 +52,18 @@ serve(async (req) => {
     }
 
     // Get server information with detailed logging
-    console.log('Preparing server query for ID:', serverId)
-    const query = supabaseClient
+    console.log('Fetching server details for ID:', serverId)
+    const { data: servers, error: serversError } = await supabaseClient
       .from('servers')
       .select('*')
       .eq('id', serverId)
-    
-    console.log('Executing query:', query.toSQL())
-    
-    const { data: servers, error: serversError } = await query
+      .maybeSingle()
 
     console.log('Server lookup result:', {
       success: !!servers,
       error: serversError?.message || null,
       serverId,
-      serversCount: servers?.length || 0,
-      query: query.toSQL()
+      serverFound: !!servers
     })
 
     if (serversError) {
@@ -75,18 +71,11 @@ serve(async (req) => {
       throw new Error(`Ошибка при получении данных сервера: ${serversError.message}`)
     }
 
-    if (!servers || servers.length === 0) {
+    if (!servers) {
       const error = `Сервер с ID ${serverId} не найден`
       console.error('Server not found:', { serverId, error })
       throw new Error(error)
     }
-
-    const server = servers[0]
-    console.log('Server found:', { 
-      serverId: server.id,
-      name: server.name,
-      host: server.host
-    })
 
     // Create command record with logging
     console.log('Creating command record...')
