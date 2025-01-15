@@ -15,10 +15,11 @@ serve(async (req) => {
     console.log('Initializing Supabase client...')
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
-          persistSession: false
+          persistSession: false,
+          autoRefreshToken: false
         }
       }
     )
@@ -50,7 +51,7 @@ serve(async (req) => {
     }
 
     // Проверяем все серверы для отладки
-    console.log('Checking all servers...')
+    console.log('Checking all servers with service role...')
     const { data: allServers, error: allServersError } = await supabaseClient
       .from('servers')
       .select('id, name, host')
