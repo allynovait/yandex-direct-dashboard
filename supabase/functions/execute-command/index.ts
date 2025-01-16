@@ -90,11 +90,6 @@ serve(async (req) => {
               console.log('Stream closed')
               resolve(errorOutput || output)
             })
-
-            stream.on('error', (err) => {
-              console.error('Stream error:', err)
-              reject(err)
-            })
           })
         })
 
@@ -107,26 +102,17 @@ serve(async (req) => {
           console.log('SSH handshake details:', negotiated)
         })
 
+        // Properly format the private key by removing any extra whitespace and comments
         let privateKey = server.ssh_private_key || '';
-        
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
-          .filter(line => line.length > 0 && !line.includes('COMMENT'))
+          .filter(line => line.length > 0)
           .join('\n');
 
         if (!privateKey.includes('-----BEGIN') || !privateKey.includes('-----END')) {
           throw new Error('Invalid private key format: missing header or footer');
         }
-
-        console.log('SSH key format check:', {
-          hasHeader: privateKey.includes('-----BEGIN'),
-          hasFooter: privateKey.includes('-----END'),
-          length: privateKey.length,
-          firstLine: privateKey.split('\n')[0],
-          lastLine: privateKey.split('\n').slice(-1)[0],
-          totalLines: privateKey.split('\n').length
-        })
 
         console.log('Attempting SSH connection to:', server.host)
 
@@ -137,17 +123,13 @@ serve(async (req) => {
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
-              'diffie-hellman-group1-sha1',
-              'diffie-hellman-group14-sha1',
               'diffie-hellman-group14-sha256',
               'diffie-hellman-group16-sha512',
               'diffie-hellman-group18-sha512',
-              'diffie-hellman-group-exchange-sha256',
-              'diffie-hellman-group-exchange-sha1'
+              'diffie-hellman-group-exchange-sha256'
             ],
             serverHostKey: [
               'ssh-rsa',
-              'ssh-dss',
               'rsa-sha2-256',
               'rsa-sha2-512',
               'ecdsa-sha2-nistp256',
@@ -155,17 +137,15 @@ serve(async (req) => {
               'ecdsa-sha2-nistp521'
             ],
             cipher: [
+              'aes128-gcm',
+              'aes256-gcm',
               'aes128-ctr',
               'aes192-ctr',
-              'aes256-ctr',
-              'aes128-gcm',
-              'aes256-gcm'
+              'aes256-ctr'
             ],
             hmac: [
               'hmac-sha2-256',
-              'hmac-sha2-512',
-              'hmac-sha1',
-              'hmac-md5'
+              'hmac-sha2-512'
             ]
           },
           hostVerifier: () => true
