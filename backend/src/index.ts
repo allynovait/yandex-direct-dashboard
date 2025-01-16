@@ -10,6 +10,7 @@ const port = process.env.PORT || 3000;
 // Настраиваем CORS для разрешения запросов с фронтенда
 app.use(cors({
   origin: [
+    'https://allynovaittest.site',
     'https://c92a790c-17b3-472d-8332-9fc086e78627.lovableproject.com',
     'http://localhost:5173', // для локальной разработки
   ],
@@ -29,7 +30,7 @@ app.use(express.json());
 app.use('/api/yandex', yandexRoutes);
 
 // Проверяем наличие SSL сертификатов
-const sslPath = '/etc/letsencrypt/live/89.223.70.180/';
+const sslPath = '/etc/letsencrypt/live/allynovaittest.site/';
 if (fs.existsSync(sslPath)) {
   try {
     const httpsOptions = {
