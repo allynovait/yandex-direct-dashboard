@@ -46,21 +46,25 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
   const setupHttps = async () => {
     try {
-      // Step 1: Update and install certbot
+      // Step 1: Stop all PM2 processes to free port 80
+      await executeCommand('sudo pm2 stop all');
+      toast({
+        title: "Server stopped",
+        description: "Successfully stopped all server processes",
+      });
+      
+      // Step 2: Update and install certbot
       await executeCommand('sudo apt-get update && sudo apt-get install -y certbot');
       
-      // Step 2: Stop the Node.js server to free port 80
-      await executeCommand('sudo pm2 stop all');
-      
       // Step 3: Get the certificate (using --standalone since we don't have nginx)
-      await executeCommand('sudo certbot certonly --standalone --agree-tos --non-interactive -d 89.223.70.180 --register-unsafely-without-email');
+      await executeCommand('sudo certbot certonly --standalone --agree-tos --non-interactive -d allynovaittest.site --register-unsafely-without-email');
       
       // Step 4: Verify certificate exists
-      await executeCommand('ls -la /etc/letsencrypt/live/89.223.70.180/');
+      await executeCommand('ls -la /etc/letsencrypt/live/allynovaittest.site/');
       
       // Step 5: Set correct permissions for certificate files
-      await executeCommand('sudo chown -R root:root /etc/letsencrypt/live/89.223.70.180/');
-      await executeCommand('sudo chmod -R 755 /etc/letsencrypt/live/89.223.70.180/');
+      await executeCommand('sudo chown -R root:root /etc/letsencrypt/live/allynovaittest.site/');
+      await executeCommand('sudo chmod -R 755 /etc/letsencrypt/live/allynovaittest.site/');
       
       // Step 6: Start the server back with new configuration
       await executeCommand('sudo pm2 start all');
