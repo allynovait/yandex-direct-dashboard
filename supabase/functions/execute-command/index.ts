@@ -102,16 +102,20 @@ serve(async (req) => {
           console.log('SSH handshake details:', negotiated)
         })
 
-        // Properly format the private key by removing any extra whitespace and comments
+        // Форматируем приватный ключ, удаляя лишние пробелы и комментарии
         let privateKey = server.ssh_private_key || '';
+        
+        // Удаляем все пробелы в начале и конце строк
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
           .filter(line => line.length > 0)
           .join('\n');
 
-        if (!privateKey.includes('-----BEGIN') || !privateKey.includes('-----END')) {
-          throw new Error('Invalid private key format: missing header or footer');
+        // Проверяем корректность формата ключа
+        if (!privateKey.includes('-----BEGIN OPENSSH PRIVATE KEY-----') || 
+            !privateKey.includes('-----END OPENSSH PRIVATE KEY-----')) {
+          throw new Error('Неверный формат приватного ключа: отсутствует заголовок или футер');
         }
 
         console.log('Attempting SSH connection to:', server.host)
