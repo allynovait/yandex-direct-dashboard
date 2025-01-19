@@ -52,9 +52,12 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       // Проверяем права доступа к файлам в .ssh
       await executeCommand('ls -la /root/.ssh/test*');
       
+      // Проверяем содержимое authorized_keys
+      await executeCommand('cat ~/.ssh/authorized_keys');
+      
       toast({
         title: "Проверка SSH ключей",
-        description: "Проверка прав доступа к SSH ключам запущена",
+        description: "Проверка прав доступа к SSH ключам и authorized_keys запущена",
       });
     } catch (error) {
       console.error('Error checking SSH permissions:', error);
