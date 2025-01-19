@@ -46,21 +46,58 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
   const checkSSHPermissions = async () => {
     try {
-      // Проверяем существование директории .ssh
+      // Проверяем существование директории .ssh и её права
+      await executeCommand('ls -la ~ | grep .ssh');
+      
+      // Создаём директорию .ssh если её нет
+      await executeCommand('mkdir -p ~/.ssh');
+      
+      // Устанавливаем правильные права для директории .ssh (700)
+      await executeCommand('chmod 700 ~/.ssh');
+      
+      // Проверяем права на файлы ключей
       await executeCommand('ls -la ~/.ssh');
       
-      // Проверяем права доступа к файлам в .ssh
-      await executeCommand('ls -la /root/.ssh/test*');
-      
-      // Проверяем содержимое authorized_keys
-      await executeCommand('cat ~/.ssh/authorized_keys');
-      
       toast({
-        title: "Проверка SSH ключей",
-        description: "Проверка прав доступа к SSH ключам и authorized_keys запущена",
+        title: "Проверка прав доступа SSH",
+        description: "Начата проверка прав доступа к SSH директории и ключам",
       });
     } catch (error) {
       console.error('Error checking SSH permissions:', error);
+    }
+  };
+
+  const fixSSHPermissions = async () => {
+    try {
+      // Создаём директорию .ssh если её нет
+      await executeCommand('mkdir -p ~/.ssh');
+      
+      // Устанавливаем правильные права для директории .ssh (700)
+      await executeCommand('chmod 700 ~/.ssh');
+      
+      // Устанавливаем права для приватного ключа (600)
+      await executeCommand('chmod 600 ~/.ssh/id_rsa');
+      
+      // Устанавливаем права для публичного ключа (644)
+      await executeCommand('chmod 644 ~/.ssh/id_rsa.pub');
+      
+      // Устанавливаем права для authorized_keys (600)
+      await executeCommand('chmod 600 ~/.ssh/authorized_keys');
+      
+      // Проверяем результат
+      await executeCommand('ls -la ~/.ssh');
+      
+      toast({
+        title: "Права доступа SSH обновлены",
+        description: "Установлены рекомендуемые права доступа для SSH директории и ключей",
+      });
+    } catch (error) {
+      console.error('Error fixing SSH permissions:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось установить права доступа",
+        variant: "destructive"
+      });
     }
   };
 
@@ -120,7 +157,14 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
         disabled={isExecuting}
         className="w-full"
       >
-        {isExecuting ? "Проверка прав доступа..." : "Проверить права SSH ключей"}
+        {isExecuting ? "Проверка прав доступа..." : "Проверить права SSH"}
+      </Button>
+      <Button 
+        onClick={fixSSHPermissions} 
+        disabled={isExecuting}
+        className="w-full"
+      >
+        {isExecuting ? "Настройка прав доступа..." : "Настроить права SSH"}
       </Button>
       <Button 
         onClick={setupHttps} 
