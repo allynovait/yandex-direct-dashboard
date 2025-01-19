@@ -56,7 +56,7 @@ serve(async (req) => {
       console.error('Server not found:', serverError)
       return new Response(
         JSON.stringify({ 
-          error: `Server not found`,
+          error: 'Server not found',
           details: serverError?.message
         }),
         { 
@@ -81,7 +81,7 @@ serve(async (req) => {
       console.error('Failed to create command record:', commandError)
       return new Response(
         JSON.stringify({ 
-          error: `Failed to create command record`,
+          error: 'Failed to create command record',
           details: commandError.message
         }),
         { 
@@ -134,14 +134,19 @@ serve(async (req) => {
           console.log('SSH handshake details:', negotiated)
         })
 
-        // Обработка приватного ключа
-        let privateKey = server.ssh_private_key || '';
+        // Enhanced private key handling
+        let privateKey = server.ssh_private_key || ''
         
+        // Normalize line endings
+        privateKey = privateKey.replace(/\r\n/g, '\n')
+        
+        // Add headers if missing
         if (!privateKey.includes('-----BEGIN')) {
           console.log('Adding OpenSSH headers to private key')
           privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`
         }
 
+        // Clean up any extra whitespace
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
@@ -150,6 +155,11 @@ serve(async (req) => {
         console.log('Attempting SSH connection to:', server.host)
         console.log('Private key format:', privateKey.includes('-----BEGIN') ? 'OpenSSH' : 'Raw')
         console.log('Private key length:', privateKey.length)
+        console.log('Private key structure:', {
+          hasBeginMarker: privateKey.includes('-----BEGIN'),
+          hasEndMarker: privateKey.includes('-----END'),
+          lineCount: privateKey.split('\n').length
+        })
 
         ssh.connect({
           host: server.host,
@@ -161,7 +171,10 @@ serve(async (req) => {
               'diffie-hellman-group14-sha256',
               'diffie-hellman-group16-sha512',
               'diffie-hellman-group18-sha512',
-              'diffie-hellman-group-exchange-sha256'
+              'diffie-hellman-group-exchange-sha256',
+              'ecdh-sha2-nistp256',
+              'ecdh-sha2-nistp384',
+              'ecdh-sha2-nistp521'
             ],
             serverHostKey: [
               'ssh-rsa',
@@ -169,14 +182,15 @@ serve(async (req) => {
               'rsa-sha2-512',
               'ecdsa-sha2-nistp256',
               'ecdsa-sha2-nistp384',
-              'ecdsa-sha2-nistp521'
+              'ecdsa-sha2-nistp521',
+              'ssh-ed25519'
             ],
             cipher: [
               'aes128-ctr',
               'aes192-ctr',
               'aes256-ctr',
-              'aes128-gcm',
-              'aes256-gcm'
+              'aes128-gcm@openssh.com',
+              'aes256-gcm@openssh.com'
             ],
             hmac: [
               'hmac-sha2-256',
