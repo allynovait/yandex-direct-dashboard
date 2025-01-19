@@ -133,19 +133,15 @@ serve(async (req) => {
           console.log('SSH handshake details:', negotiated)
         })
 
-        // Enhanced private key handling
         let privateKey = server.ssh_private_key || ''
         
-        // Normalize line endings
         privateKey = privateKey.replace(/\r\n/g, '\n')
         
-        // Add headers if missing
         if (!privateKey.includes('-----BEGIN')) {
           console.log('Adding OpenSSH headers to private key')
           privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`
         }
 
-        // Clean up any extra whitespace
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
@@ -170,7 +166,13 @@ serve(async (req) => {
             ],
             serverHostKey: [
               'ssh-rsa',
-              'ssh-dss'
+              'ssh-dss',
+              'rsa-sha2-256',
+              'rsa-sha2-512',
+              'ssh-ed25519',
+              'ecdsa-sha2-nistp256',
+              'ecdsa-sha2-nistp384',
+              'ecdsa-sha2-nistp521'
             ],
             cipher: [
               'aes128-ctr',
@@ -211,7 +213,6 @@ serve(async (req) => {
       console.error('SSH Error:', sshError)
       console.error('SSH Error Stack:', sshError.stack)
       
-      // Update command status to error
       await supabaseClient
         .from('server_commands')
         .update({
