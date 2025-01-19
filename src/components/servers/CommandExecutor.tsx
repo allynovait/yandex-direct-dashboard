@@ -26,21 +26,38 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
       console.log('Command execution result:', data);
       toast({
-        title: "Command executed",
-        description: `Output: ${data?.output || 'No output'}`,
+        title: "Команда выполнена",
+        description: `Результат: ${data?.output || 'Нет вывода'}`,
       });
 
       return data;
     } catch (error) {
       console.error('Error executing command:', error);
       toast({
-        title: "Error executing command",
+        title: "Ошибка выполнения команды",
         description: error.message,
         variant: "destructive"
       });
       throw error;
     } finally {
       setIsExecuting(false);
+    }
+  };
+
+  const checkSSHPermissions = async () => {
+    try {
+      // Проверяем существование директории .ssh
+      await executeCommand('ls -la ~/.ssh');
+      
+      // Проверяем права доступа к файлам в .ssh
+      await executeCommand('ls -la /root/.ssh/test*');
+      
+      toast({
+        title: "Проверка SSH ключей",
+        description: "Проверка прав доступа к SSH ключам запущена",
+      });
+    } catch (error) {
+      console.error('Error checking SSH permissions:', error);
     }
   };
 
@@ -79,12 +96,12 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
     } catch (error) {
       console.error('Error during HTTPS setup:', error);
       toast({
-        title: "HTTPS Setup Failed",
-        description: "Failed to setup HTTPS. Please check the logs for details.",
+        title: "Ошибка настройки HTTPS",
+        description: "Не удалось настроить HTTPS. Проверьте логи для деталей.",
         variant: "destructive"
       });
       
-      // Try to restart the server in case of failure
+      // Пытаемся перезапустить сервер в случае ошибки
       try {
         await executeCommand('sudo pm2 start all');
       } catch (restartError) {
@@ -96,11 +113,18 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
   return (
     <div className="space-y-4">
       <Button 
+        onClick={checkSSHPermissions} 
+        disabled={isExecuting}
+        className="w-full"
+      >
+        {isExecuting ? "Проверка прав доступа..." : "Проверить права SSH ключей"}
+      </Button>
+      <Button 
         onClick={setupHttps} 
         disabled={isExecuting}
         className="w-full"
       >
-        {isExecuting ? "Setting up HTTPS..." : "Setup HTTPS"}
+        {isExecuting ? "Настройка HTTPS..." : "Настроить HTTPS"}
       </Button>
     </div>
   );
