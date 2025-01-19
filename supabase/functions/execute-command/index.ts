@@ -135,11 +135,12 @@ serve(async (req) => {
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
-          .filter(line => line.length > 0)
           .join('\n');
 
         console.log('Attempting SSH connection to:', server.host)
-        console.log('Using private key format:', privateKey.includes('-----BEGIN') ? 'OpenSSH' : 'Raw')
+        console.log('Private key format:', privateKey.includes('-----BEGIN') ? 'OpenSSH' : 'Raw')
+        console.log('Private key length:', privateKey.length)
+        console.log('Private key first line:', privateKey.split('\n')[0])
 
         ssh.connect({
           host: server.host,
@@ -148,13 +149,17 @@ serve(async (req) => {
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
+              'diffie-hellman-group1-sha1',
+              'diffie-hellman-group14-sha1',
               'diffie-hellman-group14-sha256',
               'diffie-hellman-group16-sha512',
               'diffie-hellman-group18-sha512',
+              'diffie-hellman-group-exchange-sha1',
               'diffie-hellman-group-exchange-sha256'
             ],
             serverHostKey: [
               'ssh-rsa',
+              'ssh-dss',
               'rsa-sha2-256',
               'rsa-sha2-512',
               'ecdsa-sha2-nistp256',
@@ -162,13 +167,17 @@ serve(async (req) => {
               'ecdsa-sha2-nistp521'
             ],
             cipher: [
-              'aes128-gcm',
-              'aes256-gcm',
               'aes128-ctr',
               'aes192-ctr',
-              'aes256-ctr'
+              'aes256-ctr',
+              'aes128-gcm',
+              'aes256-gcm',
+              '3des-cbc',
+              'aes128-cbc',
+              'aes256-cbc'
             ],
             hmac: [
+              'hmac-sha1',
               'hmac-sha2-256',
               'hmac-sha2-512'
             ]
@@ -197,6 +206,7 @@ serve(async (req) => {
 
     } catch (sshError) {
       console.error('SSH Error:', sshError)
+      console.error('SSH Error Stack:', sshError.stack)
       
       // Update command status to error
       await supabaseClient
@@ -224,6 +234,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error)
+    console.error('Error Stack:', error.stack)
     
     return new Response(
       JSON.stringify({ 
