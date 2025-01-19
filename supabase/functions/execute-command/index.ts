@@ -31,8 +31,12 @@ serve(async (req) => {
     const { serverId, command } = await req.json()
     
     if (!serverId || !command) {
+      console.error('Missing required parameters:', { serverId, command })
       return new Response(
-        JSON.stringify({ error: 'Server ID and command are required' }),
+        JSON.stringify({ 
+          error: 'Server ID and command are required',
+          details: { serverId, command }
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400
@@ -40,7 +44,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('Executing command:', command)
+    console.log('Executing command:', command, 'on server:', serverId)
 
     const { data: server, error: serverError } = await supabaseClient
       .from('servers')
@@ -49,8 +53,12 @@ serve(async (req) => {
       .single()
 
     if (serverError || !server) {
+      console.error('Server not found:', serverError)
       return new Response(
-        JSON.stringify({ error: `Server not found: ${serverError?.message}` }),
+        JSON.stringify({ 
+          error: `Server not found`,
+          details: serverError?.message
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 404
@@ -70,8 +78,12 @@ serve(async (req) => {
       .single()
 
     if (commandError) {
+      console.error('Failed to create command record:', commandError)
       return new Response(
-        JSON.stringify({ error: `Failed to create command record: ${commandError.message}` }),
+        JSON.stringify({ 
+          error: `Failed to create command record`,
+          details: commandError.message
+        }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500
@@ -125,22 +137,19 @@ serve(async (req) => {
         // Обработка приватного ключа
         let privateKey = server.ssh_private_key || '';
         
-        // Проверяем и форматируем ключ
         if (!privateKey.includes('-----BEGIN')) {
-          console.log('Adding OpenSSH headers to private key');
-          privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
+          console.log('Adding OpenSSH headers to private key')
+          privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`
         }
 
-        // Удаляем лишние пробелы и переносы строк
         privateKey = privateKey
           .split('\n')
           .map(line => line.trim())
-          .join('\n');
+          .join('\n')
 
         console.log('Attempting SSH connection to:', server.host)
         console.log('Private key format:', privateKey.includes('-----BEGIN') ? 'OpenSSH' : 'Raw')
         console.log('Private key length:', privateKey.length)
-        console.log('Private key first line:', privateKey.split('\n')[0])
 
         ssh.connect({
           host: server.host,
@@ -149,17 +158,13 @@ serve(async (req) => {
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
-              'diffie-hellman-group1-sha1',
-              'diffie-hellman-group14-sha1',
               'diffie-hellman-group14-sha256',
               'diffie-hellman-group16-sha512',
               'diffie-hellman-group18-sha512',
-              'diffie-hellman-group-exchange-sha1',
               'diffie-hellman-group-exchange-sha256'
             ],
             serverHostKey: [
               'ssh-rsa',
-              'ssh-dss',
               'rsa-sha2-256',
               'rsa-sha2-512',
               'ecdsa-sha2-nistp256',
@@ -171,13 +176,9 @@ serve(async (req) => {
               'aes192-ctr',
               'aes256-ctr',
               'aes128-gcm',
-              'aes256-gcm',
-              '3des-cbc',
-              'aes128-cbc',
-              'aes256-cbc'
+              'aes256-gcm'
             ],
             hmac: [
-              'hmac-sha1',
               'hmac-sha2-256',
               'hmac-sha2-512'
             ]
