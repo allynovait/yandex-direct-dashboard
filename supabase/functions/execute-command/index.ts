@@ -8,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       headers: corsHeaders,
@@ -155,11 +154,6 @@ serve(async (req) => {
         console.log('Attempting SSH connection to:', server.host)
         console.log('Private key format:', privateKey.includes('-----BEGIN') ? 'OpenSSH' : 'Raw')
         console.log('Private key length:', privateKey.length)
-        console.log('Private key structure:', {
-          hasBeginMarker: privateKey.includes('-----BEGIN'),
-          hasEndMarker: privateKey.includes('-----END'),
-          lineCount: privateKey.split('\n').length
-        })
 
         ssh.connect({
           host: server.host,
@@ -168,18 +162,15 @@ serve(async (req) => {
           debug: (debug) => console.log('SSH Debug:', debug),
           algorithms: {
             kex: [
+              'diffie-hellman-group14-sha1',
+              'diffie-hellman-group1-sha1',
               'diffie-hellman-group14-sha256',
               'diffie-hellman-group16-sha512',
-              'diffie-hellman-group18-sha512',
-              'diffie-hellman-group-exchange-sha256'
+              'diffie-hellman-group18-sha512'
             ],
             serverHostKey: [
               'ssh-rsa',
-              'rsa-sha2-256',
-              'rsa-sha2-512',
-              'ecdsa-sha2-nistp256',
-              'ecdsa-sha2-nistp384',
-              'ecdsa-sha2-nistp521'
+              'ssh-dss'
             ],
             cipher: [
               'aes128-ctr',
@@ -189,6 +180,7 @@ serve(async (req) => {
               'aes256-gcm@openssh.com'
             ],
             hmac: [
+              'hmac-sha1',
               'hmac-sha2-256',
               'hmac-sha2-512'
             ]
