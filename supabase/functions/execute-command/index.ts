@@ -8,8 +8,12 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 200
+    })
   }
 
   try {
@@ -27,7 +31,13 @@ serve(async (req) => {
     const { serverId, command } = await req.json()
     
     if (!serverId || !command) {
-      throw new Error('Server ID and command are required')
+      return new Response(
+        JSON.stringify({ error: 'Server ID and command are required' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400
+        }
+      )
     }
 
     console.log('Executing command:', command)
@@ -39,7 +49,13 @@ serve(async (req) => {
       .single()
 
     if (serverError || !server) {
-      throw new Error(`Server not found: ${serverError?.message}`)
+      return new Response(
+        JSON.stringify({ error: `Server not found: ${serverError?.message}` }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404
+        }
+      )
     }
 
     // Create command record
@@ -54,7 +70,13 @@ serve(async (req) => {
       .single()
 
     if (commandError) {
-      throw new Error(`Failed to create command record: ${commandError.message}`)
+      return new Response(
+        JSON.stringify({ error: `Failed to create command record: ${commandError.message}` }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      )
     }
 
     // Execute SSH command
@@ -186,7 +208,16 @@ serve(async (req) => {
         })
         .eq('id', commandRecord.id)
       
-      throw sshError
+      return new Response(
+        JSON.stringify({ 
+          error: sshError.message,
+          details: sshError.stack
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        }
+      )
     } finally {
       ssh.end()
     }
@@ -201,7 +232,7 @@ serve(async (req) => {
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
+        status: 500
       }
     )
   }
