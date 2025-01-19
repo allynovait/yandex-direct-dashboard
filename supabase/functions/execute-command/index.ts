@@ -75,15 +75,13 @@ serve(async (req) => {
             let errorOutput = ''
 
             stream.on('data', (data: Buffer) => {
-              const chunk = data.toString()
-              console.log('Stream data:', chunk)
-              output += chunk
+              output += data.toString()
+              console.log('Stream data:', data.toString())
             })
 
             stream.stderr.on('data', (data: Buffer) => {
-              const chunk = data.toString()
-              console.error('Stream error:', chunk)
-              errorOutput += chunk
+              errorOutput += data.toString()
+              console.error('Stream error:', data.toString())
             })
 
             stream.on('close', () => {
@@ -105,22 +103,21 @@ serve(async (req) => {
         // Обработка приватного ключа
         let privateKey = server.ssh_private_key || '';
         
-        // Проверяем, содержит ли ключ заголовки
-        const hasHeaders = privateKey.includes('-----BEGIN') && privateKey.includes('-----END');
-        
-        // Если заголовков нет, пробуем использовать ключ как есть
-        if (!hasHeaders) {
-          console.log('Using raw private key without headers');
-        } else {
-          // Если заголовки есть, форматируем ключ правильно
-          privateKey = privateKey
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0)
-            .join('\n');
+        // Проверяем и форматируем ключ
+        if (!privateKey.includes('-----BEGIN')) {
+          console.log('Adding OpenSSH headers to private key');
+          privateKey = `-----BEGIN OPENSSH PRIVATE KEY-----\n${privateKey}\n-----END OPENSSH PRIVATE KEY-----`;
         }
 
+        // Удаляем лишние пробелы и переносы строк
+        privateKey = privateKey
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .join('\n');
+
         console.log('Attempting SSH connection to:', server.host)
+        console.log('Using private key format:', privateKey.includes('-----BEGIN') ? 'OpenSSH' : 'Raw')
 
         ssh.connect({
           host: server.host,
