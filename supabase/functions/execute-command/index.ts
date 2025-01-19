@@ -102,20 +102,22 @@ serve(async (req) => {
           console.log('SSH handshake details:', negotiated)
         })
 
-        // Форматируем приватный ключ, удаляя лишние пробелы и комментарии
+        // Обработка приватного ключа
         let privateKey = server.ssh_private_key || '';
         
-        // Удаляем все пробелы в начале и конце строк
-        privateKey = privateKey
-          .split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .join('\n');
-
-        // Проверяем корректность формата ключа
-        if (!privateKey.includes('-----BEGIN OPENSSH PRIVATE KEY-----') || 
-            !privateKey.includes('-----END OPENSSH PRIVATE KEY-----')) {
-          throw new Error('Неверный формат приватного ключа: отсутствует заголовок или футер');
+        // Проверяем, содержит ли ключ заголовки
+        const hasHeaders = privateKey.includes('-----BEGIN') && privateKey.includes('-----END');
+        
+        // Если заголовков нет, пробуем использовать ключ как есть
+        if (!hasHeaders) {
+          console.log('Using raw private key without headers');
+        } else {
+          // Если заголовки есть, форматируем ключ правильно
+          privateKey = privateKey
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .join('\n');
         }
 
         console.log('Attempting SSH connection to:', server.host)
