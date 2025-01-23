@@ -12,7 +12,7 @@ app.use(cors({
   origin: [
     'https://allynovaittest.site',
     'https://c92a790c-17b3-472d-8332-9fc086e78627.lovableproject.com',
-    'http://localhost:5173', // для локальной разработки
+    'http://localhost:5173',
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
