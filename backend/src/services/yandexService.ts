@@ -73,10 +73,12 @@ export class YandexService {
           }]
         }
       };
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      console.error('Error in YandexService.getStats:', axiosError.response?.data || axiosError.message);
-      throw axiosError;
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.error('Error in YandexService.getStats:', error.response?.data || error.message);
+        throw error;
+      }
+      throw error;
     }
   }
 
@@ -94,10 +96,12 @@ export class YandexService {
 
       console.log('Yandex.Direct API accounts response:', response.data);
       return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      console.error('Error in YandexService.getAccounts:', axiosError.response?.data || axiosError.message);
-      throw axiosError;
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.error('Error in YandexService.getAccounts:', error.response?.data || error.message);
+        throw error;
+      }
+      throw error;
     }
   }
 }

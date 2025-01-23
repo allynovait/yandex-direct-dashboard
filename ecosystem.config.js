@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: "yandex-dashboard",
-    script: "./backend/dist/index.js",
+    script: "./dist/index.js",
     env: {
       NODE_ENV: "production",
       PORT: 3000
