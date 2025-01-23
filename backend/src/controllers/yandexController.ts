@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { YandexService } from '../services/yandexService';
+import { AxiosError } from 'axios';
 
 export const getStats = async (req: Request, res: Response) => {
   try {
@@ -17,10 +18,11 @@ export const getStats = async (req: Request, res: Response) => {
     const stats = await yandexService.getStats(dateRange);
     res.json(stats);
   } catch (error) {
-    console.error('Error in getStats controller:', error.response?.data || error.message);
+    const axiosError = error as AxiosError;
+    console.error('Error in getStats controller:', axiosError.response?.data || axiosError.message);
     res.status(500).json({ 
       error: 'Failed to fetch stats',
-      details: error.response?.data || error.message
+      details: axiosError.response?.data || axiosError.message
     });
   }
 };
@@ -38,10 +40,11 @@ export const getAccounts = async (req: Request, res: Response) => {
     const accounts = await yandexService.getAccounts();
     res.json(accounts);
   } catch (error) {
-    console.error('Error in getAccounts controller:', error.response?.data || error.message);
+    const axiosError = error as AxiosError;
+    console.error('Error in getAccounts controller:', axiosError.response?.data || axiosError.message);
     res.status(500).json({ 
       error: 'Failed to fetch accounts',
-      details: error.response?.data || error.message
+      details: axiosError.response?.data || axiosError.message
     });
   }
 };

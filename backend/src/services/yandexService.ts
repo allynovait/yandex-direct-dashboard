@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { DateRange } from '../types/yandex';
 
 export class YandexService {
@@ -16,7 +16,6 @@ export class YandexService {
         token: this.token.slice(-8)
       });
 
-      // Форматируем даты в формат YYYY-MM-DD
       const dateFrom = new Date(dateRange.from).toISOString().split('T')[0];
       const dateTo = new Date(dateRange.to).toISOString().split('T')[0];
 
@@ -58,7 +57,6 @@ export class YandexService {
 
       console.log('Yandex.Direct API response:', response.data);
       
-      // Парсим TSV ответ
       const [metrics = "0\t0\t0\t0\t0"] = response.data.split('\n');
       const [clicks, impressions, ctr, cost, conversions] = metrics.split('\t').map(Number);
 
@@ -76,8 +74,9 @@ export class YandexService {
         }
       };
     } catch (error) {
-      console.error('Error in YandexService.getStats:', error.response?.data || error.message);
-      throw error;
+      const axiosError = error as AxiosError;
+      console.error('Error in YandexService.getStats:', axiosError.response?.data || axiosError.message);
+      throw axiosError;
     }
   }
 
@@ -96,8 +95,9 @@ export class YandexService {
       console.log('Yandex.Direct API accounts response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error in YandexService.getAccounts:', error.response?.data || error.message);
-      throw error;
+      const axiosError = error as AxiosError;
+      console.error('Error in YandexService.getAccounts:', axiosError.response?.data || axiosError.message);
+      throw axiosError;
     }
   }
 }
