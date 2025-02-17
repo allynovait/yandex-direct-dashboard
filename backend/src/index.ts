@@ -8,22 +8,24 @@ import yandexRoutes from './routes/yandexRoutes';
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Настраиваем CORS для разрешения запросов с фронтенда
+// Расширяем настройки CORS
 app.use(cors({
-  origin: [
-    'https://allynovaittest.site',
-    'https://c92a790c-17b3-472d-8332-9fc086e78627.lovableproject.com',
-    'http://localhost:5173',
-  ],
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  origin: '*', // Временно разрешаем запросы с любого домена для отладки
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
-// Добавляем логирование запросов
+// Добавляем обработку OPTIONS запросов
+app.options('*', cors());
+
+// Добавляем расширенное логирование запросов
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
   next();
 });
 
@@ -46,13 +48,13 @@ if (fs.existsSync(sslPath)) {
   } catch (error) {
     console.error('Error starting HTTPS server:', error);
     // Если возникла ошибка при запуске HTTPS, запускаем HTTP
-    app.listen(port, () => {
+    app.listen(port, '0.0.0.0', () => {
       console.log(`HTTP Server running on port ${port} (HTTPS failed to start)`);
     });
   }
 } else {
-  // Если сертификатов нет, запускаем HTTP сервер
-  app.listen(port, () => {
+  // Если сертификатов нет, запускаем HTTP сервер на всех интерфейсах
+  app.listen(port, '0.0.0.0', () => {
     console.log(`HTTP Server running on port ${port} (No SSL certificates found)`);
   });
 }
