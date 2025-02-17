@@ -1,6 +1,7 @@
+
 import { YandexStats, DateRange } from "@/types/yandex";
 
-const API_URL = 'https://allynovaittest.site:3000/api/yandex';
+const API_URL = 'http://allynovaittest.site:3000/api/yandex';
 
 export class YandexDirectAPI {
   private token: string;
