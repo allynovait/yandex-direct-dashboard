@@ -1,8 +1,8 @@
 
 import { YandexStats, DateRange } from "@/types/yandex";
 
-// Use HTTP instead of HTTPS to avoid SSL certificate errors
-const API_URL = 'http://allynovaittest.site:3000/api/yandex';
+// Use HTTPS instead of HTTP to avoid mixed content errors
+const API_URL = 'https://allynovaittest.site:3000/api/yandex';
 
 export class YandexDirectAPI {
   private token: string;

@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Use the same API URL as in yandexApi.ts
-const API_URL = 'http://allynovaittest.site:3000/api/yandex';
+const API_URL = 'https://allynovaittest.site:3000/api/yandex';
 
 interface TokenStatus {
   [key: string]: {
