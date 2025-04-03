@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, Trash2 } from "lucide-react";
@@ -29,7 +30,7 @@ export const TokenList = () => {
       setTokenStatus(prev => ({ ...prev, ...newStatus }));
       
       try {
-        const response = await fetch("https://89.223.70.180:3000/api/yandex/accounts", {
+        const response = await fetch("http://allynovaittest.site:3000/api/yandex/accounts", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
