@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Use the same API URL as in yandexApi.ts
+const API_URL = 'http://allynovaittest.site:3000/api/yandex';
+
 interface TokenStatus {
   [key: string]: {
     isConnected: boolean;
@@ -31,9 +34,10 @@ export const TokenList = () => {
       
       try {
         console.log(`Checking token ${token.slice(-8)} status with API...`);
-        const response = await fetch("http://allynovaittest.site:3000/api/yandex/accounts", {
+        const response = await fetch(`${API_URL}/accounts`, {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
           },
         });
         
