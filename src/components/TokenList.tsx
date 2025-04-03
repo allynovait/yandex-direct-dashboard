@@ -30,6 +30,7 @@ export const TokenList = () => {
       setTokenStatus(prev => ({ ...prev, ...newStatus }));
       
       try {
+        console.log(`Checking token ${token.slice(-8)} status with API...`);
         const response = await fetch("http://allynovaittest.site:3000/api/yandex/accounts", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -40,8 +41,9 @@ export const TokenList = () => {
           isConnected: response.ok,
           isLoading: false,
         };
+        console.log(`Token ${token.slice(-8)} status:`, response.ok ? 'connected' : 'failed');
       } catch (error) {
-        console.error(`Error checking token ${token}:`, error);
+        console.error(`Error checking token ${token.slice(-8)}:`, error);
         newStatus[token] = {
           isConnected: false,
           isLoading: false,

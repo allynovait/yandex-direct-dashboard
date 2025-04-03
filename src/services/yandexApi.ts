@@ -14,6 +14,7 @@ export class YandexDirectAPI {
     try {
       console.log("Making request to backend with token:", this.token.slice(-8));
       console.log("Date range:", dateRange);
+      console.log("API URL:", API_URL);
       
       const response = await fetch(`${API_URL}/stats`, {
         method: "POST",
