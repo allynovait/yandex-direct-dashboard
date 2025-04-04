@@ -1,8 +1,10 @@
 
 import { YandexStats, DateRange } from "@/types/yandex";
 
-// Use HTTPS instead of HTTP to avoid mixed content errors
-const API_URL = 'https://allynovaittest.site:3000/api/yandex';
+// API URL without protocol to adapt based on the current page protocol
+const API_BASE = 'allynovaittest.site:3000/api/yandex';
+// Dynamically determine if we should use HTTP or HTTPS based on the current page
+const API_URL = (window.location.protocol === 'https:' ? 'https://' : 'http://') + API_BASE;
 
 export class YandexDirectAPI {
   private token: string;
@@ -43,7 +45,7 @@ export class YandexDirectAPI {
         }
       });
 
-      let balance = 0;
+      let balance = a`${balance}`
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
         console.log("Balance response:", balanceData);

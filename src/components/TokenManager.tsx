@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const TokenManager = () => {
   const [newToken, setNewToken] = useState("");
@@ -21,6 +22,10 @@ export const TokenManager = () => {
     if (!tokens.includes(newToken)) {
       tokens.push(newToken);
       localStorage.setItem("yandex_tokens", JSON.stringify(tokens));
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('tokensUpdated'));
+      
       toast({
         title: "Успешно",
         description: "Токен добавлен",
