@@ -45,7 +45,7 @@ export class YandexDirectAPI {
         }
       });
 
-      let balance = a`${balance}`
+      let balance = 0; // Initialize balance properly
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
         console.log("Balance response:", balanceData);
