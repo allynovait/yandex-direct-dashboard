@@ -1,10 +1,8 @@
 
 import { YandexStats, DateRange } from "@/types/yandex";
 
-// API URL without protocol to adapt based on the current page protocol
-const API_BASE = 'allynovaittest.site:3000/api/yandex';
-// Dynamically determine if we should use HTTP or HTTPS based on the current page
-const API_URL = (window.location.protocol === 'https:' ? 'https://' : 'http://') + API_BASE;
+// Always use HTTPS for the API URL
+const API_URL = 'https://allynovaittest.site:3000/api/yandex';
 
 export class YandexDirectAPI {
   private token: string;
