@@ -8,9 +8,9 @@ import yandexRoutes from './routes/yandexRoutes';
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Расширяем настройки CORS для поддержки всех доменов
+// Расширяем настройки CORS
 app.use(cors({
-  origin: '*',  // Разрешаем запросы с любого домена
+  origin: '*', // Временно разрешаем запросы с любого домена для отладки
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   credentials: true,
@@ -18,7 +18,7 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-// Обработка preflight запросов OPTIONS
+// Добавляем обработку OPTIONS запросов
 app.options('*', cors());
 
 // Добавляем расширенное логирование запросов
@@ -26,12 +26,6 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   console.log('Headers:', req.headers);
   console.log('Body:', req.body);
-  
-  // Явно добавляем CORS заголовки для всех ответов
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  
   next();
 });
 

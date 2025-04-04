@@ -17,9 +17,7 @@ export const checkTokenStatus = async (token: string): Promise<TokenStatusRespon
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Origin": window.location.origin,
-        "Accept": "application/json"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ 
         token, 
@@ -27,8 +25,7 @@ export const checkTokenStatus = async (token: string): Promise<TokenStatusRespon
           from: new Date(new Date().setDate(new Date().getDate() - 7)),
           to: new Date()
         }
-      }),
-      mode: "cors" // Явно указываем режим CORS
+      })
     });
     
     const isConnected = response.ok;

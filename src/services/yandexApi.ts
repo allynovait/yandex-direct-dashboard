@@ -21,12 +21,9 @@ export class YandexDirectAPI {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.token}`,
-          "Origin": window.location.origin,
-          "Accept": "application/json"
+          "Authorization": `Bearer ${this.token}`
         },
-        body: JSON.stringify({ token: this.token, dateRange }),
-        mode: "cors" // Явно указываем режим CORS
+        body: JSON.stringify({ token: this.token, dateRange })
       });
 
       if (!response.ok) {
@@ -44,11 +41,8 @@ export class YandexDirectAPI {
         const balanceResponse = await fetch(`${API_URL}/accounts`, {
           headers: {
             "Authorization": `Bearer ${this.token}`,
-            "Content-Type": "application/json",
-            "Origin": window.location.origin,
-            "Accept": "application/json"
-          },
-          mode: "cors" // Явно указываем режим CORS
+            "Content-Type": "application/json"
+          }
         });
 
         if (balanceResponse.ok) {
