@@ -42,19 +42,19 @@ if (fs.existsSync(sslPath)) {
     };
 
     // Создаем HTTPS сервер
-    https.createServer(httpsOptions, app).listen(port, () => {
+    https.createServer(httpsOptions, app).listen(Number(port), () => {
       console.log(`HTTPS Server running on port ${port}`);
     });
   } catch (error) {
     console.error('Error starting HTTPS server:', error);
     // Если возникла ошибка при запуске HTTPS, запускаем HTTP
-    app.listen(port, '0.0.0.0', () => {
+    app.listen(Number(port), () => {
       console.log(`HTTP Server running on port ${port} (HTTPS failed to start)`);
     });
   }
 } else {
   // Если сертификатов нет, запускаем HTTP сервер на всех интерфейсах
-  app.listen(port, '0.0.0.0', () => {
+  app.listen(Number(port), () => {
     console.log(`HTTP Server running on port ${port} (No SSL certificates found)`);
   });
 }
