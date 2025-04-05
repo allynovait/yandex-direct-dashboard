@@ -1,0 +1,34 @@
+
+server {
+    listen 80;
+    server_name allynovaittest.site www.allynovaittest.site;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name allynovaittest.site www.allynovaittest.site;
+
+    ssl_certificate /etc/letsencrypt/live/allynovaittest.site/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/allynovaittest.site/privkey.pem;
+    
+    root /home/app/yandex-direct-dashboard/dist;
+    index index.html;
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/yandex {
+        proxy_pass http://localhost:3000/api/yandex;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+    
+    # Логи
+    access_log /var/log/nginx/yandex-dashboard-access.log;
+    error_log /var/log/nginx/yandex-dashboard-error.log;
+}
