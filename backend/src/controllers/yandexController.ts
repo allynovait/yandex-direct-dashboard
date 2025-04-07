@@ -69,11 +69,10 @@ export const getStatus = async (req: Request, res: Response) => {
   try {
     console.log('Received status check request');
     
-    res.json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      version: '1.0.0'
-    });
+    const yandexService = new YandexService('dummy-token');
+    const status = await yandexService.getStatus();
+    
+    res.json(status);
   } catch (error: unknown) {
     const err = error as Error;
     console.error('Error in getStatus controller:', err.message);

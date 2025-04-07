@@ -45,6 +45,7 @@ app.get('/', (req, res) => {
   });
 });
 
+// API маршруты
 app.use('/api/yandex', yandexRoutes);
 
 // Проверяем наличие SSL сертификатов
