@@ -30,6 +30,21 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+
+// Добавляем корневой маршрут
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Yandex Direct Dashboard API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: [
+      '/api/yandex/stats',
+      '/api/yandex/accounts',
+      '/api/yandex/status'
+    ]
+  });
+});
+
 app.use('/api/yandex', yandexRoutes);
 
 // Проверяем наличие SSL сертификатов

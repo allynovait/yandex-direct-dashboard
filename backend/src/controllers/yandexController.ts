@@ -64,3 +64,22 @@ export const getAccounts = async (req: Request, res: Response) => {
     }
   }
 };
+
+export const getStatus = async (req: Request, res: Response) => {
+  try {
+    console.log('Received status check request');
+    
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error in getStatus controller:', err.message);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: err.message
+    });
+  }
+};
