@@ -1,3 +1,4 @@
+
 import { Request, Response } from 'express';
 import { YandexService } from '../services/yandexService';
 import { AxiosError } from 'axios';
@@ -6,7 +7,7 @@ export const getStats = async (req: Request, res: Response) => {
   try {
     console.log('Received stats request with body:', req.body);
     
-    const { token, dateRange } = req.body;
+    const { token, dateRange, conversionIds } = req.body;
     if (!token || !dateRange) {
       return res.status(400).json({ 
         error: 'Missing required parameters',
@@ -15,7 +16,7 @@ export const getStats = async (req: Request, res: Response) => {
     }
 
     const yandexService = new YandexService(token);
-    const stats = await yandexService.getStats(dateRange);
+    const stats = await yandexService.getStats(dateRange, conversionIds);
     res.json(stats);
   } catch (error: unknown) {
     if (error instanceof AxiosError) {

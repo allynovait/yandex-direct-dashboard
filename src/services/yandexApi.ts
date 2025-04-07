@@ -17,13 +17,18 @@ export class YandexDirectAPI {
       console.log("Date range:", dateRange);
       console.log("API URL:", API_URL);
       
+      // Fetch conversion goals for this token
+      const storageKey = `conversion_goals_${this.token}`;
+      const conversionIds = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      console.log("Conversion goals for token:", conversionIds);
+      
       const response = await fetch(`${API_URL}/stats`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${this.token}`
         },
-        body: JSON.stringify({ token: this.token, dateRange })
+        body: JSON.stringify({ token: this.token, dateRange, conversionIds })
       });
 
       if (!response.ok) {
@@ -69,7 +74,10 @@ export class YandexDirectAPI {
         ctr: metrics.Ctr || 0,
         spend: metrics.Cost || 0,
         conversions: metrics.Conversions || 0,
-        balance: balance
+        balance: balance,
+        conversionGoals: data.result?.conversionGoals || [],
+        demographics: data.result?.demographics,
+        devices: data.result?.devices
       };
     } catch (error) {
       console.error("Error fetching stats for token", this.token.slice(-8), ":", error);
