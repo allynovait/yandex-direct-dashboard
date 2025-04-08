@@ -1,12 +1,16 @@
 
+# Пример конфигурации для включения в /etc/nginx/sites-available/
+
+# Перенаправление HTTP на HTTPS
 server {
     listen 80;
     server_name allynovaittest.site www.allynovaittest.site;
     return 301 https://$host$request_uri;
 }
 
+# Настройки HTTPS сервера
 server {
-    listen 443 ssl;
+    listen 443 ssl;  # обратите внимание: ssl параметр указан в директиве listen
     server_name allynovaittest.site www.allynovaittest.site;
 
     ssl_certificate /etc/letsencrypt/live/allynovaittest.site/fullchain.pem;
@@ -32,3 +36,10 @@ server {
     access_log /var/log/nginx/yandex-dashboard-access.log;
     error_log /var/log/nginx/yandex-dashboard-error.log;
 }
+
+# ИНСТРУКЦИЯ ПО УСТАНОВКЕ:
+# 1. Сохраните этот файл как /etc/nginx/sites-available/yandex-dashboard
+# 2. Создайте символическую ссылку: sudo ln -s /etc/nginx/sites-available/yandex-dashboard /etc/nginx/sites-enabled/
+# 3. Удалите циклические ссылки если они есть: sudo rm /etc/nginx/sites-enabled/ln (если такой файл существует)
+# 4. Проверьте конфигурацию: sudo nginx -t
+# 5. Перезапустите Nginx: sudo systemctl restart nginx
