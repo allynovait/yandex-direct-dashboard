@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CommandExecutorProps {
   serverId: string;
@@ -76,6 +76,54 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
     }
   };
 
+  const checkSSHKeyFormat = async () => {
+    try {
+      // Проверяем формат ключей
+      await executeCommand('file ~/.ssh/id_rsa');
+      await executeCommand('ssh-keygen -l -f ~/.ssh/id_rsa');
+      
+      toast({
+        title: "Проверка формата SSH-ключей",
+        description: "Выполнена проверка формата SSH-ключей",
+      });
+    } catch (error) {
+      console.error('Error checking SSH key format:', error);
+      toast({
+        title: "Ошибка проверки формата ключей",
+        description: "Не удалось проверить формат SSH-ключей. Возможно, файлы не существуют.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const setupAuthorizedKeys = async () => {
+    try {
+      // Создаем файл authorized_keys если он не существует
+      await executeCommand('touch ~/.ssh/authorized_keys');
+      
+      // Добавляем публичный ключ в authorized_keys
+      await executeCommand('cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys');
+      
+      // Устанавливаем правильные права на файл
+      await executeCommand('chmod 600 ~/.ssh/authorized_keys');
+      
+      // Выводим содержимое файла для проверки
+      await executeCommand('cat ~/.ssh/authorized_keys');
+      
+      toast({
+        title: "Настройка authorized_keys",
+        description: "Публичный ключ добавлен в файл authorized_keys",
+      });
+    } catch (error) {
+      console.error('Error setting up authorized_keys:', error);
+      toast({
+        title: "Ошибка настройки authorized_keys",
+        description: "Не удалось настроить файл authorized_keys",
+        variant: "destructive"
+      });
+    }
+  };
+
   const fixSSHPermissions = async () => {
     try {
       setSshError(null);
@@ -129,55 +177,6 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
         description: "Не удалось установить SSH-соединение с сервером.",
         variant: "destructive"
       });
-    }
-  };
-
-  const setupHttps = async () => {
-    try {
-      // Step 1: Stop all PM2 processes to free port 80
-      await executeCommand('sudo pm2 stop all');
-      toast({
-        title: "Server stopped",
-        description: "Successfully stopped all server processes",
-      });
-      
-      // Step 2: Update and install certbot
-      await executeCommand('sudo apt-get update && sudo apt-get install -y certbot');
-      
-      // Step 3: Get the certificate (using --standalone since we don't have nginx)
-      await executeCommand('sudo certbot certonly --standalone --agree-tos --non-interactive -d allynovaittest.site --register-unsafely-without-email');
-      
-      // Step 4: Verify certificate exists
-      await executeCommand('ls -la /etc/letsencrypt/live/allynovaittest.site/');
-      
-      // Step 5: Set correct permissions for certificate files
-      await executeCommand('sudo chown -R root:root /etc/letsencrypt/live/allynovaittest.site/');
-      await executeCommand('sudo chmod -R 755 /etc/letsencrypt/live/allynovaittest.site/');
-      
-      // Step 6: Start the server back with new configuration
-      await executeCommand('sudo pm2 start all');
-      
-      // Step 7: Verify HTTPS is working by checking the port
-      await executeCommand('sudo netstat -tulpn | grep LISTEN');
-      
-      toast({
-        title: "HTTPS Setup Complete",
-        description: "HTTPS has been successfully configured on the server.",
-      });
-    } catch (error) {
-      console.error('Error during HTTPS setup:', error);
-      toast({
-        title: "Ошибка настройки HTTPS",
-        description: "Не удалось настроить HTTPS. Проверьте логи для деталей.",
-        variant: "destructive"
-      });
-      
-      // Пытаемся перезапустить сервер в случае ошибки
-      try {
-        await executeCommand('sudo pm2 start all');
-      } catch (restartError) {
-        console.error('Error restarting server:', restartError);
-      }
     }
   };
 
@@ -256,6 +255,55 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
     }
   };
 
+  const setupHttps = async () => {
+    try {
+      // Step 1: Stop all PM2 processes to free port 80
+      await executeCommand('sudo pm2 stop all');
+      toast({
+        title: "Server stopped",
+        description: "Successfully stopped all server processes",
+      });
+      
+      // Step 2: Update and install certbot
+      await executeCommand('sudo apt-get update && sudo apt-get install -y certbot');
+      
+      // Step 3: Get the certificate (using --standalone since we don't have nginx)
+      await executeCommand('sudo certbot certonly --standalone --agree-tos --non-interactive -d allynovaittest.site --register-unsafely-without-email');
+      
+      // Step 4: Verify certificate exists
+      await executeCommand('ls -la /etc/letsencrypt/live/allynovaittest.site/');
+      
+      // Step 5: Set correct permissions for certificate files
+      await executeCommand('sudo chown -R root:root /etc/letsencrypt/live/allynovaittest.site/');
+      await executeCommand('sudo chmod -R 755 /etc/letsencrypt/live/allynovaittest.site/');
+      
+      // Step 6: Start the server back with new configuration
+      await executeCommand('sudo pm2 start all');
+      
+      // Step 7: Verify HTTPS is working by checking the port
+      await executeCommand('sudo netstat -tulpn | grep LISTEN');
+      
+      toast({
+        title: "HTTPS Setup Complete",
+        description: "HTTPS has been successfully configured on the server.",
+      });
+    } catch (error) {
+      console.error('Error during HTTPS setup:', error);
+      toast({
+        title: "Ошибка настройки HTTPS",
+        description: "Не удалось настроить HTTPS. Проверьте логи для деталей.",
+        variant: "destructive"
+      });
+      
+      // Пытаемся перезапустить сервер в случае ошибки
+      try {
+        await executeCommand('sudo pm2 start all');
+      } catch (restartError) {
+        console.error('Error restarting server:', restartError);
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
       {sshError && (
@@ -265,53 +313,80 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
         </Alert>
       )}
       
-      <Button 
-        onClick={testSSHConnection} 
-        disabled={isExecuting}
-        className="w-full bg-blue-600 hover:bg-blue-700"
-      >
-        {isExecuting ? "Проверка SSH..." : "Проверить SSH-соединение"}
-      </Button>
-      
-      <Button 
-        onClick={checkSSHPermissions} 
-        disabled={isExecuting}
-        className="w-full"
-      >
-        {isExecuting ? "Проверка прав доступа..." : "Проверить права SSH"}
-      </Button>
-      
-      <Button 
-        onClick={fixSSHPermissions} 
-        disabled={isExecuting}
-        className="w-full"
-      >
-        {isExecuting ? "Настройка прав доступа..." : "Настроить права SSH"}
-      </Button>
-      
-      <Button 
-        onClick={setupHttps} 
-        disabled={isExecuting}
-        className="w-full"
-      >
-        {isExecuting ? "Настройка HTTPS..." : "Настроить HTTPS"}
-      </Button>
-      
-      <Button 
-        onClick={fixNginxSymlinks} 
-        disabled={isExecuting}
-        className="w-full"
-      >
-        {isExecuting ? "Исправление символических ссылок..." : "Исправить символические ссылки Nginx"}
-      </Button>
-      
-      <Button 
-        onClick={setupNginxConfig} 
-        disabled={isExecuting}
-        className="w-full"
-      >
-        {isExecuting ? "Настройка конфигурации Nginx..." : "Настроить конфигурацию Nginx"}
-      </Button>
+      <Tabs defaultValue="ssh" className="w-full">
+        <TabsList className="grid grid-cols-2">
+          <TabsTrigger value="ssh">Настройка SSH</TabsTrigger>
+          <TabsTrigger value="nginx">Настройка Nginx</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="ssh" className="space-y-4">
+          <Button 
+            onClick={testSSHConnection} 
+            disabled={isExecuting}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            {isExecuting ? "Проверка SSH..." : "Проверить SSH-соединение"}
+          </Button>
+          
+          <Button 
+            onClick={checkSSHPermissions} 
+            disabled={isExecuting}
+            className="w-full"
+          >
+            {isExecuting ? "Проверка прав доступа..." : "Проверить права SSH"}
+          </Button>
+          
+          <Button 
+            onClick={checkSSHKeyFormat} 
+            disabled={isExecuting}
+            className="w-full"
+          >
+            {isExecuting ? "Проверка формата ключей..." : "Проверить формат SSH-ключей"}
+          </Button>
+          
+          <Button 
+            onClick={setupAuthorizedKeys} 
+            disabled={isExecuting}
+            className="w-full"
+          >
+            {isExecuting ? "Настройка authorized_keys..." : "Настроить authorized_keys"}
+          </Button>
+          
+          <Button 
+            onClick={fixSSHPermissions} 
+            disabled={isExecuting}
+            className="w-full"
+          >
+            {isExecuting ? "Настройка прав доступа..." : "Настроить права SSH"}
+          </Button>
+        </TabsContent>
+        
+        <TabsContent value="nginx" className="space-y-4">
+          <Button 
+            onClick={fixNginxSymlinks} 
+            disabled={isExecuting}
+            className="w-full"
+          >
+            {isExecuting ? "Исправление символических ссылок..." : "Исправить символические ссылки Nginx"}
+          </Button>
+          
+          <Button 
+            onClick={setupNginxConfig} 
+            disabled={isExecuting}
+            className="w-full"
+          >
+            {isExecuting ? "Настройка конфигурации Nginx..." : "Настроить конфигурацию Nginx"}
+          </Button>
+          
+          <Button 
+            onClick={setupHttps} 
+            disabled={isExecuting}
+            className="w-full"
+          >
+            {isExecuting ? "Настройка HTTPS..." : "Настроить HTTPS"}
+          </Button>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
