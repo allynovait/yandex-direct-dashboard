@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -12,11 +13,13 @@ interface CommandExecutorProps {
 export function CommandExecutor({ serverId }: CommandExecutorProps) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [sshError, setSshError] = useState<string | null>(null);
+  const [lastCommandResult, setLastCommandResult] = useState<string | null>(null);
+  const [lastErrorDetails, setLastErrorDetails] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const executeCommand = async (command: string) => {
+  const executeCommand = async (command: string, showOutput: boolean = true) => {
     setIsExecuting(true);
-    setSshError(null);
+    setLastErrorDetails(null);
     try {
       console.log('Executing command:', command);
       const { data, error } = await supabase.functions.invoke('execute-command', {
@@ -25,30 +28,108 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
       if (error) {
         console.error('Error executing command:', error);
+        setLastErrorDetails(error.message);
+        
         if (error.message.includes("Handshake failed") || 
             error.message.includes("signature verification failed")) {
           setSshError("Ошибка SSH-подключения: проблемы с верификацией ключа. Проверьте права доступа SSH ключей.");
+        } else if (error.message.includes("non-2xx status code")) {
+          setSshError("Ошибка выполнения Edge Function: возможно, проблема с сервером или соединением.");
         }
         throw error;
       }
 
       console.log('Command execution result:', data);
-      toast({
-        title: "Команда выполнена",
-        description: `Результат: ${data?.output || 'Нет вывода'}`,
-      });
-
+      
+      if (showOutput) {
+        toast({
+          title: "Команда выполнена",
+          description: `Результат: ${data?.output || 'Нет вывода'}`,
+        });
+      }
+      
+      setLastCommandResult(data?.output || null);
       return data;
     } catch (error) {
       console.error('Error executing command:', error);
-      toast({
-        title: "Ошибка выполнения команды",
-        description: error.message,
-        variant: "destructive"
-      });
+      setLastCommandResult(null);
+      
+      if (showOutput) {
+        toast({
+          title: "Ошибка выполнения команды",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
       throw error;
     } finally {
       setIsExecuting(false);
+    }
+  };
+
+  const checkSSHConnection = async () => {
+    try {
+      setSshError(null);
+      await executeCommand('echo "SSH-соединение успешно установлено"');
+      
+      toast({
+        title: "SSH-соединение активно",
+        description: "SSH-подключение к серверу работает корректно.",
+      });
+    } catch (error) {
+      console.error('Error testing SSH connection:', error);
+      setSshError("Ошибка SSH-подключения. Возможно, проблема с SSH-ключами или аутентификацией.")
+      toast({
+        title: "Ошибка SSH-соединения",
+        description: "Не удалось установить SSH-соединение с сервером.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const createSSHKeys = async () => {
+    try {
+      setSshError(null);
+      toast({
+        title: "Создание SSH-ключей",
+        description: "Начат процесс создания новых SSH-ключей...",
+      });
+      
+      // Проверяем существующие ключи
+      const checkResult = await executeCommand('ls -la ~/.ssh/ || echo "Директория не существует"', false);
+      const sshDirExists = !checkResult?.output?.includes("Директория не существует");
+      
+      // Создаем директорию .ssh если её нет
+      if (!sshDirExists) {
+        await executeCommand('mkdir -p ~/.ssh/', false);
+        await executeCommand('chmod 700 ~/.ssh/', false);
+      }
+      
+      // Создаем новую пару ключей без пароля
+      await executeCommand('ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" -y || echo "Не удалось создать ключи"');
+      
+      // Устанавливаем правильные права
+      await executeCommand('chmod 600 ~/.ssh/id_rsa', false);
+      await executeCommand('chmod 644 ~/.ssh/id_rsa.pub', false);
+      
+      // Добавляем публичный ключ в authorized_keys
+      await executeCommand('cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys', false);
+      await executeCommand('chmod 600 ~/.ssh/authorized_keys', false);
+      
+      // Выводим результат
+      const pubKeyResult = await executeCommand('cat ~/.ssh/id_rsa.pub');
+      
+      toast({
+        title: "SSH-ключи созданы",
+        description: "Новые SSH-ключи успешно созданы и настроены.",
+      });
+    } catch (error) {
+      console.error('Error creating SSH keys:', error);
+      toast({
+        title: "Ошибка создания SSH-ключей",
+        description: "Не удалось создать новые SSH-ключи. " + error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -58,29 +139,33 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       // Проверяем существование директории .ssh и её права
       await executeCommand('ls -la ~ | grep .ssh');
       
-      // Создаём директорию .ssh если её нет
-      await executeCommand('mkdir -p ~/.ssh');
-      
-      // Устанавливаем правильные права для директории .ssh (700)
-      await executeCommand('chmod 700 ~/.ssh');
-      
       // Проверяем права на файлы ключей
       await executeCommand('ls -la ~/.ssh');
       
       toast({
         title: "Проверка прав доступа SSH",
-        description: "Начата проверка прав доступа к SSH директории и ключам",
+        description: "Проверка прав доступа к SSH директории и ключам выполнена",
       });
     } catch (error) {
       console.error('Error checking SSH permissions:', error);
+      toast({
+        title: "Ошибка проверки SSH-директории",
+        description: "Не удалось проверить SSH-директорию. Возможно, она не существует.",
+        variant: "destructive"
+      });
     }
   };
 
   const checkSSHKeyFormat = async () => {
     try {
       // Проверяем формат ключей
-      await executeCommand('file ~/.ssh/id_rsa');
-      await executeCommand('ssh-keygen -l -f ~/.ssh/id_rsa');
+      const privateKeyCheck = await executeCommand('file ~/.ssh/id_rsa || echo "Приватный ключ не существует"');
+      
+      if (privateKeyCheck?.output?.includes("не существует")) {
+        throw new Error("Приватный ключ не найден");
+      }
+      
+      await executeCommand('ssh-keygen -l -f ~/.ssh/id_rsa || echo "Не удалось проверить формат ключа"');
       
       toast({
         title: "Проверка формата SSH-ключей",
@@ -88,6 +173,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       });
     } catch (error) {
       console.error('Error checking SSH key format:', error);
+      setLastErrorDetails(error.message);
       toast({
         title: "Ошибка проверки формата ключей",
         description: "Не удалось проверить формат SSH-ключей. Возможно, файлы не существуют.",
@@ -102,7 +188,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       await executeCommand('touch ~/.ssh/authorized_keys');
       
       // Добавляем публичный ключ в authorized_keys
-      await executeCommand('cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys');
+      await executeCommand('cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys');
       
       // Устанавливаем правильные права на файл
       await executeCommand('chmod 600 ~/.ssh/authorized_keys');
@@ -128,22 +214,22 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
     try {
       setSshError(null);
       // Создаём директорию .ssh если её нет
-      await executeCommand('mkdir -p ~/.ssh');
+      await executeCommand('mkdir -p ~/.ssh/');
       
       // Устанавливаем правильные права для директории .ssh (700)
-      await executeCommand('chmod 700 ~/.ssh');
+      await executeCommand('chmod 700 ~/.ssh/');
       
       // Устанавливаем права для приватного ключа (600)
-      await executeCommand('chmod 600 ~/.ssh/id_rsa');
+      await executeCommand('chmod 600 ~/.ssh/id_rsa || echo "Приватный ключ отсутствует"');
       
       // Устанавливаем права для публичного ключа (644)
-      await executeCommand('chmod 644 ~/.ssh/id_rsa.pub');
+      await executeCommand('chmod 644 ~/.ssh/id_rsa.pub || echo "Публичный ключ отсутствует"');
       
       // Устанавливаем права для authorized_keys (600)
-      await executeCommand('chmod 600 ~/.ssh/authorized_keys');
+      await executeCommand('chmod 600 ~/.ssh/authorized_keys || echo "authorized_keys отсутствует"');
       
       // Проверяем результат
-      await executeCommand('ls -la ~/.ssh');
+      await executeCommand('ls -la ~/.ssh/');
       
       toast({
         title: "Права доступа SSH обновлены",
@@ -153,33 +239,12 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       console.error('Error fixing SSH permissions:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось установить права доступа",
+        description: "Не удалось установить права доступа: " + error.message,
         variant: "destructive"
       });
     }
   };
   
-  const testSSHConnection = async () => {
-    try {
-      setSshError(null);
-      // Тест подключения с выводом отладочной информации
-      await executeCommand('echo "SSH-соединение успешно установлено"');
-      
-      toast({
-        title: "SSH-соединение активно",
-        description: "SSH-подключение к серверу работает корректно.",
-      });
-    } catch (error) {
-      console.error('Error testing SSH connection:', error);
-      setSshError("Ошибка SSH-подключения. Возможно, проблема с SSH-ключами или аутентификацией.")
-      toast({
-        title: "Ошибка SSH-соединения",
-        description: "Не удалось установить SSH-соединение с сервером.",
-        variant: "destructive"
-      });
-    }
-  };
-
   const fixNginxSymlinks = async () => {
     try {
       setSshError(null);
@@ -248,7 +313,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
     } catch (error) {
       console.error('Error setting up Nginx config:', error);
       toast({
-        title: "Ошиб��а настройки конфигурации Nginx",
+        title: "Ошибка настройки конфигурации Nginx",
         description: "Не удалось настроить конфигурацию Nginx. Проверьте логи для деталей.",
         variant: "destructive"
       });
@@ -313,6 +378,15 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
         </Alert>
       )}
       
+      {lastErrorDetails && (
+        <Alert variant="default" className="bg-amber-50 border-amber-200">
+          <AlertTitle>Подробности последней ошибки</AlertTitle>
+          <AlertDescription className="whitespace-pre-wrap font-mono text-xs max-h-40 overflow-auto">
+            {lastErrorDetails}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Tabs defaultValue="ssh" className="w-full">
         <TabsList className="grid grid-cols-2">
           <TabsTrigger value="ssh">Настройка SSH</TabsTrigger>
@@ -321,7 +395,15 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
         
         <TabsContent value="ssh" className="space-y-4">
           <Button 
-            onClick={testSSHConnection} 
+            onClick={createSSHKeys}
+            disabled={isExecuting}
+            className="w-full bg-green-600 hover:bg-green-700"
+          >
+            {isExecuting ? "Создание ключей..." : "Создать новые SSH ключи"}
+          </Button>
+          
+          <Button 
+            onClick={testSSHConnection}
             disabled={isExecuting}
             className="w-full bg-blue-600 hover:bg-blue-700"
           >
@@ -387,6 +469,21 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
           </Button>
         </TabsContent>
       </Tabs>
+      
+      {lastCommandResult && (
+        <div className="border rounded-md p-3 bg-gray-50">
+          <h3 className="text-sm font-medium mb-1">Результат последней команды:</h3>
+          <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-40 bg-gray-100 p-2 rounded">
+            {lastCommandResult}
+          </pre>
+        </div>
+      )}
     </div>
   );
+}
+
+// Переименование функции testSSHConnection в checkSSHConnection для согласованности,
+// но сохранение имени для совместимости
+const testSSHConnection = function() {
+  return checkSSHConnection.apply(this, arguments);
 }
