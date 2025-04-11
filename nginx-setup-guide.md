@@ -1,6 +1,26 @@
 
 # Инструкция по настройке Nginx для Yandex Direct Dashboard
 
+## Решение проблем с SSH-подключением
+
+Если вы видите ошибку `Handshake failed: signature verification failed` при выполнении команд на сервере, проверьте следующее:
+
+```bash
+# Проверьте формат и права доступа для SSH-ключей
+ls -la ~/.ssh/
+chmod 600 ~/.ssh/id_rsa
+chmod 644 ~/.ssh/id_rsa.pub
+chmod 700 ~/.ssh/
+```
+
+SSH-ключи должны иметь правильные права доступа:
+- `~/.ssh/` директория: 700 (drwx------)
+- `~/.ssh/id_rsa` (приватный ключ): 600 (-rw-------)
+- `~/.ssh/id_rsa.pub` (публичный ключ): 644 (-rw-r--r--)
+- `~/.ssh/authorized_keys`: 600 (-rw-------)
+
+Также убедитесь, что формат приватного ключа корректен и соответствует формату OpenSSH.
+
 ## Проверка и исправление проблем с символическими ссылками
 
 Если вы видите ошибку `Too many levels of symbolic links` при проверке конфигурации Nginx, выполните следующие команды:
@@ -26,6 +46,7 @@ sudo cp nginx-config-example.txt /etc/nginx/sites-available/yandex-dashboard
 2. Создайте символическую ссылку в sites-enabled:
 
 ```bash
+sudo rm -f /etc/nginx/sites-enabled/yandex-dashboard
 sudo ln -s /etc/nginx/sites-available/yandex-dashboard /etc/nginx/sites-enabled/
 ```
 

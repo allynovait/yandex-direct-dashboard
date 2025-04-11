@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface CommandExecutorProps {
   serverId: string;
@@ -9,10 +11,12 @@ interface CommandExecutorProps {
 
 export function CommandExecutor({ serverId }: CommandExecutorProps) {
   const [isExecuting, setIsExecuting] = useState(false);
+  const [sshError, setSshError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const executeCommand = async (command: string) => {
     setIsExecuting(true);
+    setSshError(null);
     try {
       console.log('Executing command:', command);
       const { data, error } = await supabase.functions.invoke('execute-command', {
@@ -21,6 +25,10 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
       if (error) {
         console.error('Error executing command:', error);
+        if (error.message.includes("Handshake failed") || 
+            error.message.includes("signature verification failed")) {
+          setSshError("Ошибка SSH-подключения: проблемы с верификацией ключа. Проверьте права доступа SSH ключей.");
+        }
         throw error;
       }
 
@@ -46,6 +54,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
   const checkSSHPermissions = async () => {
     try {
+      setSshError(null);
       // Проверяем существование директории .ssh и её права
       await executeCommand('ls -la ~ | grep .ssh');
       
@@ -69,6 +78,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
   const fixSSHPermissions = async () => {
     try {
+      setSshError(null);
       // Создаём директорию .ssh если её нет
       await executeCommand('mkdir -p ~/.ssh');
       
@@ -96,6 +106,27 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       toast({
         title: "Ошибка",
         description: "Не удалось установить права доступа",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const testSSHConnection = async () => {
+    try {
+      setSshError(null);
+      // Тест подключения с выводом отладочной информации
+      await executeCommand('echo "SSH-соединение успешно установлено"');
+      
+      toast({
+        title: "SSH-соединение активно",
+        description: "SSH-подключение к серверу работает корректно.",
+      });
+    } catch (error) {
+      console.error('Error testing SSH connection:', error);
+      setSshError("Ошибка SSH-подключения. Возможно, проблема с SSH-ключами или аутентификацией.")
+      toast({
+        title: "Ошибка SSH-соединения",
+        description: "Не удалось установить SSH-соединение с сервером.",
         variant: "destructive"
       });
     }
@@ -152,6 +183,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
   const fixNginxSymlinks = async () => {
     try {
+      setSshError(null);
       // Проверяем текущее состояние символических ссылок
       await executeCommand('sudo ls -la /etc/nginx/sites-enabled/');
       
@@ -226,6 +258,21 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
 
   return (
     <div className="space-y-4">
+      {sshError && (
+        <Alert variant="destructive">
+          <AlertTitle>Проблема с SSH-подключением</AlertTitle>
+          <AlertDescription>{sshError}</AlertDescription>
+        </Alert>
+      )}
+      
+      <Button 
+        onClick={testSSHConnection} 
+        disabled={isExecuting}
+        className="w-full bg-blue-600 hover:bg-blue-700"
+      >
+        {isExecuting ? "Проверка SSH..." : "Проверить SSH-соединение"}
+      </Button>
+      
       <Button 
         onClick={checkSSHPermissions} 
         disabled={isExecuting}
@@ -233,6 +280,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       >
         {isExecuting ? "Проверка прав доступа..." : "Проверить права SSH"}
       </Button>
+      
       <Button 
         onClick={fixSSHPermissions} 
         disabled={isExecuting}
@@ -240,6 +288,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       >
         {isExecuting ? "Настройка прав доступа..." : "Настроить права SSH"}
       </Button>
+      
       <Button 
         onClick={setupHttps} 
         disabled={isExecuting}
@@ -247,6 +296,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       >
         {isExecuting ? "Настройка HTTPS..." : "Настроить HTTPS"}
       </Button>
+      
       <Button 
         onClick={fixNginxSymlinks} 
         disabled={isExecuting}
@@ -254,6 +304,7 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       >
         {isExecuting ? "Исправление символических ссылок..." : "Исправить символические ссылки Nginx"}
       </Button>
+      
       <Button 
         onClick={setupNginxConfig} 
         disabled={isExecuting}
