@@ -150,6 +150,80 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
     }
   };
 
+  const fixNginxSymlinks = async () => {
+    try {
+      // Проверяем текущее состояние символических ссылок
+      await executeCommand('sudo ls -la /etc/nginx/sites-enabled/');
+      
+      // Удаляем проблемную символическую ссылку ln, если она существует
+      await executeCommand('sudo rm -f /etc/nginx/sites-enabled/ln');
+      
+      // Удаляем существующую символическую ссылку yandex-dashboard, чтобы избежать ошибки "File exists"
+      await executeCommand('sudo rm -f /etc/nginx/sites-enabled/yandex-dashboard');
+      
+      // Создаем правильную символическую ссылку
+      await executeCommand('sudo ln -s /etc/nginx/sites-available/yandex-dashboard /etc/nginx/sites-enabled/');
+      
+      // Проверяем конфигурацию Nginx
+      await executeCommand('sudo nginx -t');
+      
+      // Перезапускаем Nginx
+      await executeCommand('sudo systemctl restart nginx');
+      
+      toast({
+        title: "Символические ссылки Nginx исправлены",
+        description: "Проблема с символическими ссылками Nginx должна быть исправлена. Проверьте статус Nginx.",
+      });
+    } catch (error) {
+      console.error('Error fixing Nginx symlinks:', error);
+      toast({
+        title: "Ошибка исправления символических ссылок",
+        description: "Не удалось исправить символические ссылки Nginx. Проверьте права доступа и состояние системы.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const setupNginxConfig = async () => {
+    try {
+      // Создаем директорию sites-available, если ее нет
+      await executeCommand('sudo mkdir -p /etc/nginx/sites-available');
+      
+      // Создаем директорию sites-enabled, если ее нет
+      await executeCommand('sudo mkdir -p /etc/nginx/sites-enabled');
+      
+      // Копируем пример конфигурации в нужное место
+      await executeCommand('sudo cp nginx-config-example.txt /etc/nginx/sites-available/yandex-dashboard');
+      
+      // Удаляем старую символическую ссылку, если она существует
+      await executeCommand('sudo rm -f /etc/nginx/sites-enabled/yandex-dashboard');
+      
+      // Создаем новую символическую ссылку
+      await executeCommand('sudo ln -s /etc/nginx/sites-available/yandex-dashboard /etc/nginx/sites-enabled/');
+      
+      // Удаляем дефолтную конфигурацию, если она конфликтует
+      await executeCommand('sudo rm -f /etc/nginx/sites-enabled/default');
+      
+      // Проверяем конфигурацию
+      await executeCommand('sudo nginx -t');
+      
+      // Перезапускаем Nginx
+      await executeCommand('sudo systemctl restart nginx');
+      
+      toast({
+        title: "Конфигурация Nginx настроена",
+        description: "Конфигурация Nginx установлена и активирована. Проверьте работу сервера.",
+      });
+    } catch (error) {
+      console.error('Error setting up Nginx config:', error);
+      toast({
+        title: "Ошиб��а настройки конфигурации Nginx",
+        description: "Не удалось настроить конфигурацию Nginx. Проверьте логи для деталей.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Button 
@@ -172,6 +246,20 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
         className="w-full"
       >
         {isExecuting ? "Настройка HTTPS..." : "Настроить HTTPS"}
+      </Button>
+      <Button 
+        onClick={fixNginxSymlinks} 
+        disabled={isExecuting}
+        className="w-full"
+      >
+        {isExecuting ? "Исправление символических ссылок..." : "Исправить символические ссылки Nginx"}
+      </Button>
+      <Button 
+        onClick={setupNginxConfig} 
+        disabled={isExecuting}
+        className="w-full"
+      >
+        {isExecuting ? "Настройка конфигурации Nginx..." : "Настроить конфигурацию Nginx"}
       </Button>
     </div>
   );
