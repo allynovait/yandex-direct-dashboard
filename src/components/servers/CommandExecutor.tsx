@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -86,6 +85,8 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       });
     }
   };
+
+  const testSSHConnection = checkSSHConnection;
 
   const createSSHKeys = async () => {
     try {
@@ -480,10 +481,4 @@ export function CommandExecutor({ serverId }: CommandExecutorProps) {
       )}
     </div>
   );
-}
-
-// Переименование функции testSSHConnection в checkSSHConnection для согласованности,
-// но сохранение имени для совместимости
-const testSSHConnection = function() {
-  return checkSSHConnection.apply(this, arguments);
 }
