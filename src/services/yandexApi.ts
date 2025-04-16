@@ -41,7 +41,7 @@ export class YandexDirectAPI {
       console.log("Backend response:", data);
       
       // Get balance with a separate request
-      let balance = 0;
+      let balance = "Ошибка";
       try {
         const balanceResponse = await fetch(`${API_URL}/accounts`, {
           headers: {
@@ -57,14 +57,14 @@ export class YandexDirectAPI {
           // Использование правильных свойств из ответа API
           if (balanceData.result?.accounts && balanceData.result.accounts.length > 0) {
             const account = balanceData.result.accounts[0];
-            balance = account.Amount || 0;
+            balance = account.Amount || "Ошибка";
           }
         } else {
           console.error("Failed to fetch balance:", await balanceResponse.text());
         }
       } catch (balanceError) {
         console.error("Error fetching balance:", balanceError);
-        // Continue with zero balance
+        // Continue with error message
       }
 
       // Extract data from the report
