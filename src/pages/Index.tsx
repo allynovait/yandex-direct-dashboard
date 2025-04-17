@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "@/types/yandex";
 import { YandexStats } from "@/types/yandex";
@@ -84,8 +85,16 @@ const Index = () => {
   }
 
   const formatNumber = (num: number) => new Intl.NumberFormat("ru-RU").format(num);
-  const formatCurrency = (num: number) => 
-    new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB" }).format(num);
+  
+  // Update formatCurrency to handle both string and number types
+  const formatCurrency = (value: number | string) => {
+    // If value is a string (like "Ошибка"), return it as is
+    if (typeof value === 'string') {
+      return value;
+    }
+    // If value is a number, format it as currency
+    return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB" }).format(value);
+  };
 
   return (
     <div className="container mx-auto p-6">
