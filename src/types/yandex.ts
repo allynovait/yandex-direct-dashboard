@@ -12,7 +12,7 @@ export interface YandexStats {
   spend: number;
   clicks: number;
   impressions: number;
-  balance: number;
+  balance: number | string;
   ctr: number;
   conversionGoals?: ConversionGoal[];
   demographics?: DemographicData;
